@@ -1,17 +1,64 @@
 #include <stdio.h>
 #include "calibration.h"
+#include "hardware.h"
 #include "esp_err.h"
+#include "esp_log.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h> //for debug purposes
 
+static const char *TAG = "CALIBRATION";
 
-const uint16_t src_rdata = 200; //Fixed source gain value
+const uint16_t SCR_RDATA_CONST = 200; //Fixed source gain value
 uint16_t max_calibrated_sense_rdata = (uint16_t)MAX_GAIN;
 
 
 /* 2d array to hold calibration values and electrode mappings */
-Calibration_t calibration_table [NUM_ELECTRODE_PAIRS][NUM_SENSE_PAIRS] = {0};
+Calibration_t calibration_table[NUM_ELECTRODE_PAIRS][NUM_SENSE_PAIRS] = {
+    [0][0] = {.src_pos = 0, .src_neg = 1, .sense_pos = 2, .sense_neg = 3},
+    [0][1] = {.src_pos = 0, .src_neg = 1, .sense_pos = 3, .sense_neg = 4},
+    [0][2] = {.src_pos = 0, .src_neg = 1, .sense_pos = 4, .sense_neg = 5},
+    [0][3] = {.src_pos = 0, .src_neg = 1, .sense_pos = 5, .sense_neg = 6},
+    [0][4] = {.src_pos = 0, .src_neg = 1, .sense_pos = 6, .sense_neg = 7},
+    [1][0] = {.src_pos = 1, .src_neg = 2, .sense_pos = 3, .sense_neg = 4},
+    [1][1] = {.src_pos = 1, .src_neg = 2, .sense_pos = 4, .sense_neg = 5},
+    [1][2] = {.src_pos = 1, .src_neg = 2, .sense_pos = 5, .sense_neg = 6},
+    [1][3] = {.src_pos = 1, .src_neg = 2, .sense_pos = 6, .sense_neg = 7},
+    [1][4] = {.src_pos = 1, .src_neg = 2, .sense_pos = 7, .sense_neg = 0},
+    [2][0] = {.src_pos = 2, .src_neg = 3, .sense_pos = 4, .sense_neg = 5},
+    [2][1] = {.src_pos = 2, .src_neg = 3, .sense_pos = 5, .sense_neg = 6},
+    [2][2] = {.src_pos = 2, .src_neg = 3, .sense_pos = 6, .sense_neg = 7},
+    [2][3] = {.src_pos = 2, .src_neg = 3, .sense_pos = 7, .sense_neg = 0},
+    [2][4] = {.src_pos = 2, .src_neg = 3, .sense_pos = 0, .sense_neg = 1},
+    [3][0] = {.src_pos = 3, .src_neg = 4, .sense_pos = 5, .sense_neg = 6},
+    [3][1] = {.src_pos = 3, .src_neg = 4, .sense_pos = 6, .sense_neg = 7},
+    [3][2] = {.src_pos = 3, .src_neg = 4, .sense_pos = 7, .sense_neg = 0},
+    [3][3] = {.src_pos = 3, .src_neg = 4, .sense_pos = 0, .sense_neg = 1},
+    [3][4] = {.src_pos = 3, .src_neg = 4, .sense_pos = 1, .sense_neg = 2},
+    [4][0] = {.src_pos = 4, .src_neg = 5, .sense_pos = 6, .sense_neg = 7},
+    [4][1] = {.src_pos = 4, .src_neg = 5, .sense_pos = 7, .sense_neg = 0},
+    [4][2] = {.src_pos = 4, .src_neg = 5, .sense_pos = 0, .sense_neg = 1},
+    [4][3] = {.src_pos = 4, .src_neg = 5, .sense_pos = 1, .sense_neg = 2},
+    [4][4] = {.src_pos = 4, .src_neg = 5, .sense_pos = 2, .sense_neg = 3},
+    [5][0] = {.src_pos = 5, .src_neg = 6, .sense_pos = 7, .sense_neg = 0},
+    [5][1] = {.src_pos = 5, .src_neg = 6, .sense_pos = 0, .sense_neg = 1},
+    [5][2] = {.src_pos = 5, .src_neg = 6, .sense_pos = 1, .sense_neg = 2},
+    [5][3] = {.src_pos = 5, .src_neg = 6, .sense_pos = 2, .sense_neg = 3},
+    [5][4] = {.src_pos = 5, .src_neg = 6, .sense_pos = 3, .sense_neg = 4},
+    [6][0] = {.src_pos = 6, .src_neg = 7, .sense_pos = 0, .sense_neg = 1},
+    [6][1] = {.src_pos = 6, .src_neg = 7, .sense_pos = 1, .sense_neg = 2},
+    [6][2] = {.src_pos = 6, .src_neg = 7, .sense_pos = 2, .sense_neg = 3},
+    [6][3] = {.src_pos = 6, .src_neg = 7, .sense_pos = 3, .sense_neg = 4},
+    [6][4] = {.src_pos = 6, .src_neg = 7, .sense_pos = 4, .sense_neg = 5},
+    [7][0] = {.src_pos = 7, .src_neg = 0, .sense_pos = 1, .sense_neg = 2},
+    [7][1] = {.src_pos = 7, .src_neg = 0, .sense_pos = 2, .sense_neg = 3},
+    [7][2] = {.src_pos = 7, .src_neg = 0, .sense_pos = 3, .sense_neg = 4},
+    [7][3] = {.src_pos = 7, .src_neg = 0, .sense_pos = 4, .sense_neg = 5},
+    [7][4] = {.src_pos = 7, .src_neg = 0, .sense_pos = 5, .sense_neg = 6},
+};
+
+
+
 
 
 
@@ -82,20 +129,17 @@ static int calibrate_gain_pair(Calibration_t *cal)
 
 
 void calibration_task(void* args) {
-    printf("Calibration done\n");
+    ESP_LOGI(TAG, "Calibration done");
 
     srand(time(NULL));
 
     
     /* Intizlized Mux and set to 0,0 */
-    
-    if ( init_mux() != ESP_OK) {
-        
-    }
+    //do this 
 
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    if ( set_src_inamp_gain(src_rdata) != ESP_OK) {
+    if ( set_src_inamp_gain(SCR_RDATA_CONST) != ESP_OK) {
 
     }
 
@@ -119,7 +163,7 @@ void calibration_task(void* args) {
             }
 
 
-            printf("Calibration[%u][%u]: reference_amp=%u\n",
+            ESP_LOGI(TAG, "Calibration[%u][%u]: reference_amp=%u",
                 src_elec_pair, sense_elec_pair,
                 curr_config->reference_amp);
 
@@ -130,17 +174,17 @@ void calibration_task(void* args) {
 
     
 
-    printf("\n=== Calibration Table Summary ===\n");
+    ESP_LOGI(TAG, "\n=== Calibration Table Summary ===");
     for (uint8_t i = 0; i < NUM_ELECTRODE_PAIRS; i++) {
         for (uint8_t j = 0; j < NUM_SENSE_PAIRS; j++) {
-            printf("[%u][%u] ref_amp=%u\n",
+            ESP_LOGI(TAG, "[%u][%u] ref_amp=%u",
                    i, j,
                    calibration_table[i][j].reference_amp);
         }
     }
 
 
-    printf("Final calibrated sense gain: %u\n", max_calibrated_sense_rdata);
+    ESP_LOGI(TAG, "Final calibrated sense gain: %u", max_calibrated_sense_rdata);
 
 
 
@@ -148,43 +192,10 @@ void calibration_task(void* args) {
 
     /* Signal to the measurement task */
     if ( xSemaphoreGive(sem_cal_to_meas) != pdTRUE ) {
-        printf("Failed to give semaphore\n");
+        ESP_LOGE(TAG, "Failed to give semaphore");
     }
 
 
     vTaskDelete(NULL);
 
-}
-
-
-int set_src_inamp_gain(uint16_t src_gain) {
-    printf("set_src_inamp_gain called with src_gain=%u\n", src_gain);
-    return ESP_OK;
-}
-
-int set_sense_inamp_gain(uint16_t sense_gain) {
-    printf("set_sense_inamp_gain called with sense_gain=%u\n", sense_gain);
-    return ESP_OK;
-}
-
-
-int adcRead(uint8_t *buf, size_t len) {
-    printf("adcRead called with buffer length=%zu\n", len);
-    return ESP_OK;
-}
-
-uint16_t dsp_freq_amp(uint16_t *buf, size_t len) {
-    printf("dsp_freq_amp called with buffer length=%zu\n", len);
-    return (uint16_t)(rand() % 1000);
-}
-
-int init_mux(void) {
-    printf("init_mux called\n");
-    return ESP_OK;
-}
-
-int set_mux(uint8_t src_pos, uint8_t src_neg, uint8_t sense_pos, uint8_t sense_neg) {
-    printf("set_mux called with src_pos=%u, src_neg=%u, sense_pos=%u, sense_neg=%u\n",
-           src_pos, src_neg, sense_pos, sense_neg);
-    return ESP_OK;
 }

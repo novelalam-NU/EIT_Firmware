@@ -15,18 +15,21 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
+
+#include "driver/spi_master.h"
+
+
 #define MAX_R ((uint16_t)100000) //max resistance is 100kO
 #define NUM_STEP ((uint16_t)1024) //number of discrete steps 
 
 
 
 
-
 /* Return codes: 0 on success, negative on error */
-int ad5270_init(void);
+int ad5270_init(uint8_t dev_handle);
 
 /* Set the wiper position to value btw 0 and 1023 */
-int ad5270_set_wiper(uint16_t r_code);
+int ad5270_set_wiper(uint16_t r_code, uint8_t dev_handle);
 
 
 

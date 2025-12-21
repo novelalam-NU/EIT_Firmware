@@ -2,19 +2,23 @@
 #include <string.h>
 #include "measurement.h"
 #include "calibration.h"
+#include "hardware.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_log.h"
 
 #define ESP_OK 0
+
+static const char *TAG = "MEASUREMENT";
 
 void measurement_task(void* args) {
 
     /* Wait for calibration task to end */
     if ( xSemaphoreTake( sem_cal_to_meas, portMAX_DELAY ) != pdPASS ) {
-        printf("Semaphore failed\n");
+        ESP_LOGE(TAG, "Semaphore failed");
     }
 
-    uint16_t amps[NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS];
+    int16_t amps[NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS];
     uint8_t buffer[256];
     size_t buffer_len = sizeof(buffer);
 
@@ -22,7 +26,7 @@ void measurement_task(void* args) {
         int idx = 0;
         
         // Ensure gains are set
-        set_src_inamp_gain(src_rdata);
+        set_src_inamp_gain(SCR_RDATA_CONST);
         set_sense_inamp_gain(max_calibrated_sense_rdata);
 
         for (uint8_t src_elec_pair = 0; src_elec_pair < NUM_ELECTRODE_PAIRS; src_elec_pair++) {
@@ -31,7 +35,7 @@ void measurement_task(void* args) {
 
                 if (set_mux(curr_config->src_pos, curr_config->src_neg, 
                             curr_config->sense_pos, curr_config->sense_neg) != ESP_OK) {
-                    printf("Failed to set mux\n");
+                    ESP_LOGE(TAG, "Failed to set mux");
                     continue;
                 }
 
@@ -39,7 +43,7 @@ void measurement_task(void* args) {
                 vTaskDelay(pdMS_TO_TICKS(1));
 
                 if (adcRead(buffer, buffer_len) != ESP_OK) {
-                    printf("Failed to read ADC\n");
+                    ESP_LOGE(TAG, "Failed to read ADC");
                     continue;
                 }
 
@@ -47,21 +51,20 @@ void measurement_task(void* args) {
                 
                 // Calculate difference as requested: calibration_table->reference_amp - amplitude
                 if (idx < (NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS)) {
-                    amps[idx] = curr_config->reference_amp - amplitude;
+                    amps[idx] = (int16_t)curr_config->reference_amp - (int16_t)amplitude;
                     idx++;
-                }
+                } 
             }
         }
 
         // Print results
-        printf("Measurement Cycle Complete. Amps:\n");
+        ESP_LOGI(TAG, "Measurement Cycle Complete. Amps:");
         for (int i = 0; i < (NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS); i++) {
             int src_pair = i / NUM_SENSE_PAIRS;
             int sense_pair = i % NUM_SENSE_PAIRS;
-            printf("Src:%u Sense:%u -> %u ", src_pair, sense_pair, amps[i]);
-            if ((i + 1) % NUM_SENSE_PAIRS == 0) printf("\n");
+            ESP_LOGI(TAG, "Src:%u Sense:%u -> %d ", src_pair, sense_pair, amps[i]);
         }
-        printf("\n");
+        ESP_LOGI(TAG, "End of Cycle");
 
         vTaskDelay(pdMS_TO_TICKS(1000)); // Run every second
     }

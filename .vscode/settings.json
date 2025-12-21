@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp32c3-ftdi.cfg"
   ],
-  "idf.port": "/dev/tty.debug-console",
+  "idf.port": "/dev/tty.usbmodem2101",
   "idf.toolsPath": "/Users/novelalam/.espressif",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32c3"
@@ -15,5 +15,6 @@
     "--background-index",
     "--query-driver=/Users/novelalam/.espressif/tools/riscv32-esp-elf/esp-13.2.0_20230928/riscv32-esp-elf/bin/riscv32-esp-elf-gcc",
     "--compile-commands-dir=${workspaceFolder}/build"
-  ]
+  ],
+  "idf.flashType": "UART"
 }

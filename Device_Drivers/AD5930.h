@@ -19,7 +19,7 @@
 #define MAX_FREQ (1e6)
 #define MCLK_FREQ (50e6)
 
-#define CONSTANT_1 (1U << 24)
+#define UINT24_MAX (0xFFFFFFU)
 
 
 
@@ -34,18 +34,9 @@ typedef enum {
     START_FREQ_HIGH = 0b1101,
 } AD5930_regmap;
 
-static inline uint32_t freq_to_reg(float freq);
+#define AD5930_PACKET(reg_addr, data) ( (((reg_addr) & 0xF) << 12) | ((data) & 0xFFF) )
 
 int AD5930_init(float init_freq);
-
-
-
-
-
-
-
-
-
 
 
 
