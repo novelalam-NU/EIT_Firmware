@@ -4,13 +4,20 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "driver/spi_master.h"
-#include "../Device_Drivers/AD5270.h"
-#include "../Device_Drivers/AD5930.h"
-#include "../Device_Drivers/ADG73.h"
+#include "../Device_Drivers/AD5270_DigiPot.h"
+#include "../Device_Drivers/AD5930_SigGen.h"
+#include "../Device_Drivers/ADG73_MUX.h"
+#include "../Device_Drivers/AD7450_ADC.h"
+#include "esp_dsp.h"
+    #include <math.h>
+
+
 
 #define ESP_OK 0
 
 static const char *TAG = "HARDWARE";
+
+
 
 /* Bus Configuration*/
 static const spi_bus_config_t buscfg = {
@@ -55,14 +62,69 @@ int set_sense_inamp_gain(uint16_t sense_gain) {
     return ESP_OK;
 }
 
-int adcRead(uint8_t *buf, size_t len) {
+int adcRead(uint16_t *buf, size_t len) {
     ESP_LOGI(TAG, "adcRead called with buffer length=%zu", len);
+
+     if ( AD7450_Read(buf, len) != 0) {
+        ESP_LOGI(TAG, "test_adc failed");
+        return -1;
+    }
+
     return ESP_OK;
 }
 
-uint16_t dsp_freq_amp(uint16_t *buf, size_t len) {
+static int16_t w[128];
+uint16_t dsp_freq_amp(int16_t *buf, size_t len) {
     ESP_LOGI(TAG, "dsp_freq_amp called with buffer length=%zu", len);
-    return (uint16_t)(rand() % 1000);
+
+    /* Add in the imagninary component and apply Hanning window */
+    int16_t real_and_imagine[128] = {0};
+
+    for (int i = 0; i < len; i++) {
+        float window = 0.5f - 0.5f * cosf(2.0f * M_PI * i / (len - 1));
+        real_and_imagine[2*i] = (int16_t)(buf[i] * window);
+        real_and_imagine[2*i+1] = 0;
+    }
+    
+    /* Initialzize the FFT sine/cos tables locally*/ //in the future make this static to this function 
+    if ( dsps_fft2r_init_sc16(w, 64) != ESP_OK ) {
+        ESP_LOGE(TAG, "Failed to init sine/cos tables locally");
+        return -1;
+    }
+    ESP_LOGI(TAG, "FFT sine/cos tables initialized");
+
+    /* Run the actual FFT */
+    
+    if ( dsps_fft2r_sc16_ansi_(real_and_imagine, len, w) != ESP_OK ) {
+        ESP_LOGE(TAG, "Failed to run FFT");
+        return -1;
+    }
+    ESP_LOGI(TAG, "FFT computation completed");
+
+    if ( dsps_bit_rev_sc16_ansi(real_and_imagine, len) != ESP_OK ) {
+         ESP_LOGE(TAG, "Failed to reverse FFT");
+        return -1;
+    }
+    ESP_LOGI(TAG, "Bit reversal completed");
+
+    uint32_t max_mag = 0;
+
+    for (size_t k = 0; k < len / 2; k++) {
+        int32_t re = real_and_imagine[2 * k];
+        int32_t im = real_and_imagine[2 * k + 1];
+
+        uint32_t mag = (uint32_t)sqrtf((float)(re * re + im * im));
+        
+        if (mag > max_mag) {
+            max_mag = mag;
+        }
+
+        printf("bin[%zu] magnitude = %lu\n", k, mag);
+    }
+
+    ESP_LOGI(TAG, "DSP frequency amplitude calculation finished");
+
+    return (uint16_t)max_mag;
 }
 
 int init_inamp_pots() {
@@ -70,7 +132,6 @@ int init_inamp_pots() {
         ESP_LOGE(TAG, "Failed to init SRC_INAMP_HANDLE");
         return -1;
     }
-    vTaskDelay(300);
 
     if ( ad5270_init( SENSE_INAMP_HANDLE ) != 0) {
         ESP_LOGE(TAG, "Failed to init SENSE_INAMP_HANDLE");
@@ -85,7 +146,12 @@ int set_mux(uint8_t src_pos, uint8_t src_neg, uint8_t sense_pos, uint8_t sense_n
 
     ESP_LOGI(TAG, "set_mux called with src_pos=%u, src_neg=%u, sense_pos=%u, sense_neg=%u",
              src_pos, src_neg, sense_pos, sense_neg);
-            esp_err_t ret = ADG73_set_mux(src_pos, src_neg, sense_pos, sense_neg);
+           vTaskDelay(pdMS_TO_TICKS(1000));
+
+            esp_err_t ret = set_src_sense_ADG73(src_pos, src_neg, sense_pos, sense_neg);
+
+            vTaskDelay(pdMS_TO_TICKS(1000));
+
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to set mux: %s", esp_err_to_name(ret));
                 return ret;
@@ -101,3 +167,9 @@ int init_mux(void) {
     ESP_LOGI(TAG, "MUX initialized successfully");
     return ESP_OK;
 }
+
+int adc_init(void) {
+    return AD7450_init();
+}
+
+

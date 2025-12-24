@@ -27,21 +27,87 @@
 #endif
 
 
+/**
+ * @brief Start the signal generator at a specific frequency.
+ * 
+ * @param freq The frequency to generate in Hz.
+ * @return 0 on success, or an error code.
+ */
 int signal_gen_start(float freq);
 
+/**
+ * @brief Initialize the SPI bus.
+ * 
+ * @return 0 on success, or an error code.
+ */
 int init_spi(void);
 
+/**
+ * @brief Set the gain of the source instrumentation amplifier.
+ * 
+ * @param src_gain The gain value to set.
+ * @return 0 on success, or an error code.
+ */
 int set_src_inamp_gain(uint16_t src_gain);
+
+/**
+ * @brief Set the gain of the sense instrumentation amplifier.
+ * 
+ * @param sense_gain The gain value to set.
+ * @return 0 on success, or an error code.
+ */
 int set_sense_inamp_gain(uint16_t sense_gain);
 
-int adcRead(uint8_t *buf, size_t len);
+/**
+ * @brief Read raw data from the ADC.
+ * 
+ * @param buf Buffer to store the read data.
+ * @param len Length of the buffer.
+ * @return 0 on success, or an error code.
+ */
+int adcRead(uint16_t *buf, size_t len);
 
-uint16_t dsp_freq_amp(uint16_t *buf, size_t len);
+/**
+ * @brief Calculate the amplitude of the frequency component from the buffer.
+ * 
+ * @param buf Buffer containing the data.
+ * @param len Length of the buffer.
+ * @return The calculated amplitude.
+ */
+uint16_t dsp_freq_amp(int16_t *buf, size_t len);
 
 
 
+/**
+ * @brief Set the multiplexer channels for source and sense.
+ * 
+ * @param src_pos The positive source channel.
+ * @param src_neg The negative source channel.
+ * @param sense_pos The positive sense channel.
+ * @param sense_neg The negative sense channel.
+ * @return 0 on success, or an error code.
+ */
 int set_mux(uint8_t src_pos, uint8_t src_neg, uint8_t sense_pos, uint8_t sense_neg);
 
+/**
+ * @brief Initialize the instrumentation amplifier potentiometers.
+ * 
+ * @return 0 on success, or an error code.
+ */
 int init_inamp_pots();
 
+/**
+ * @brief Initialize the multiplexers.
+ * 
+ * @return 0 on success, or an error code.
+ */
 int init_mux(void);
+
+/**
+ * @brief Initialize the ADC.
+ * 
+ * @return 0 on success, or an error code.
+ */
+int adc_init(void);
+
+

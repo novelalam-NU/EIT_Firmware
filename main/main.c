@@ -5,12 +5,13 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-// #include "../Device_Drivers/AD5270.h"
-// #include "../Device_Drivers/AD5930.h"
+// #include "../Device_Drivers/AD5270_DigiPot.h"
+// #include "../Device_Drivers/AD5930_SigGen.h"
 
 #include "../Application_Layer/calibration.h"
 #include "../Application_Layer/measurement.h"
 #include "../Middle_Ware/hardware.h"
+#include "../Middle_Ware/hardware-test.h"
 
 #define SIG_GEN_FREQ (50000.0f) 
 
@@ -49,7 +50,23 @@ void app_main(void)
         return;
     }
 
-    vTaskDelay(300);
+    /* Initialize ADC */
+    if (adc_init() != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to init ADC");
+        return;
+    }
+
+    /* Initialize and test ADC */
+    test_dsp();
+    test_dsp();
+    test_dsp();
+    test_dsp();
+    return;
+
+
+ 
+
+    
 
     if (init_mux() != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init Mux");

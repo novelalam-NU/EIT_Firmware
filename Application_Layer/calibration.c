@@ -65,8 +65,8 @@ Calibration_t calibration_table[NUM_ELECTRODE_PAIRS][NUM_SENSE_PAIRS] = {
 static int calibrate_gain_pair(Calibration_t *cal)
 {
     /* Used for ADC and DSP */
-    uint8_t buffer[256];
-    size_t buffer_len = sizeof(buffer);
+    int16_t buffer[128];
+    size_t buffer_len = sizeof(buffer) / sizeof(buffer[0]);
 
     if (cal == NULL) {
         return ESP_FAIL;
@@ -86,7 +86,7 @@ static int calibrate_gain_pair(Calibration_t *cal)
             vTaskDelay(1); //so watch dog task not starved
 
             /* ADC read into a buffer */
-            if (adcRead(buffer, buffer_len) != ESP_OK) {
+            if (adcRead((uint16_t*)buffer, buffer_len) != ESP_OK) {
                 continue;
             }
 
@@ -115,12 +115,13 @@ static int calibrate_gain_pair(Calibration_t *cal)
         
         vTaskDelay(1); // Wait for stabilization
         
-        uint8_t buffer[256];
-        if (adcRead(buffer, sizeof(buffer)) != ESP_OK) {
+        int16_t buffer[128];
+        size_t buffer_len = sizeof(buffer) / sizeof(buffer[0]);
+        if (adcRead((uint16_t*)buffer, buffer_len) != ESP_OK) {
             return ESP_FAIL;
         }
         
-        cal->reference_amp = dsp_freq_amp(buffer, sizeof(buffer)); // Get amplitude at max gain
+        cal->reference_amp = dsp_freq_amp(buffer, buffer_len); // Get amplitude at max gain
     }
     
 

@@ -1,3 +1,3 @@
-idf_component_register(SRCS "AD5930.c" "AD5270.c" "ADG73.c"
+idf_component_register(SRCS "AD7450_ADC.c" "AD5930_SigGen.c" "AD5270_DigiPot.c" "ADG73_MUX.c"
                        INCLUDE_DIRS "."
                        REQUIRES driver)

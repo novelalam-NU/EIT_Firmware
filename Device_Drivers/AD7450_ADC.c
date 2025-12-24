@@ -1,0 +1,119 @@
+#include "AD7450_ADC.h"
+#include "../Middle_Ware/hardware.h"
+#include "driver/spi_master.h"
+#include "esp_log.h"
+#include <string.h>
+
+static const char *TAG = "AD7450";
+static spi_device_handle_t ad7450_handle = NULL;
+
+int AD7450_init() {
+    if (ad7450_handle != NULL) {
+        ESP_LOGW(TAG, "AD7450 already initialized");
+        return ESP_OK;
+    }
+
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 0,
+        .address_bits = 0,
+        .dummy_bits = 0,
+        .mode = 3, // CPOL=1, CPHA=1 (SCLK idle high, sample on rising edge)
+        .clock_speed_hz = SPI_MASTER_FREQ_8M, // 8 MHz
+        .spics_io_num = PIN_CS_ADC,
+        .queue_size = AD7450_QUEUE_SIZE,
+    };
+
+    esp_err_t ret = spi_bus_add_device(SPI2_HOST, &devcfg, &ad7450_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to add device to SPI bus: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    // Perform a dummy read to ensure the device is powered up and in normal mode
+    spi_transaction_t t;
+    memset(&t, 0, sizeof(t));
+    t.length = 16;
+    t.flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA; // Use TX data to ensure MOSI is driven (though ignored by ADC)
+    
+    ret = spi_device_transmit(ad7450_handle, &t);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Dummy read failed: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "AD7450 initialized successfully");
+    return ESP_OK;
+}
+
+int AD7450_Read(uint16_t *buf, uint32_t len) {
+    if (ad7450_handle == NULL) {
+        ESP_LOGE(TAG, "AD7450 not initialized");
+        return -1;
+    }
+
+    if (len > AD7450_QUEUE_SIZE) {
+        ESP_LOGE(TAG, "Read length %lu exceeds queue size %d", len, AD7450_QUEUE_SIZE);
+        return -1;
+    }
+
+    /* Clear the buffer */
+    memset(buf, 0, (size_t)len * sizeof(uint16_t));
+
+    /* Acquire the bus*/
+    if (spi_device_acquire_bus(ad7450_handle, portMAX_DELAY) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to acquire SPI bus");
+        return -1;
+    }
+
+    /* Hold all the transation reference in flight */
+    static spi_transaction_t trans_in_flight[AD7450_QUEUE_SIZE];
+
+    /* Queue "len" reads */
+    for (uint32_t curr_queue_trans = 0; curr_queue_trans < len; curr_queue_trans++) {
+        trans_in_flight[curr_queue_trans].length = 16;
+        trans_in_flight[curr_queue_trans].rx_buffer = &buf[curr_queue_trans];
+        trans_in_flight[curr_queue_trans].tx_buffer = NULL;
+        
+        if (spi_device_queue_trans(ad7450_handle, &trans_in_flight[curr_queue_trans], portMAX_DELAY) != ESP_OK) {
+            spi_device_release_bus(ad7450_handle);
+            return -1;
+        }
+        
+        vTaskDelay(1);
+        ESP_LOGE(TAG, "send packet %lu", curr_queue_trans);
+
+    }
+
+    /* Collect results */
+    for (uint32_t curr_queue_trans = 0; curr_queue_trans < len; curr_queue_trans++) {
+        spi_transaction_t* trans_result;
+        
+        if (spi_device_get_trans_result(ad7450_handle, &trans_result, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to get SPI transaction result");
+            spi_device_release_bus(ad7450_handle);
+            return -1;
+        }
+    }
+
+    /* See if transaction finsihed and went well*/
+
+    // for (uint32_t curr_queue_trans = 0; curr_queue_trans < len; curr_queue_trans++) {
+
+    //     /* throw away var to hold pointer to pointer to transmit*/
+    //     spi_transaction_t* trans_result;
+
+    //     if (spi_device_get_trans_result(ad7450_handle, &trans_result, portMAX_DELAY) != ESP_OK) {
+    //         ESP_LOGE(TAG, "Failed to get SPI transaction result");
+    //         spi_device_release_bus(ad7450_handle);
+    //         return -1;
+    //     }
+
+    //     vTaskDelay(300);
+
+    // }
+
+
+    spi_device_release_bus(ad7450_handle);
+
+    return 0;
+}
