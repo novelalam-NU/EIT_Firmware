@@ -65,16 +65,18 @@ int set_sense_inamp_gain(uint16_t sense_gain);
  * @param len Length of the buffer.
  * @return 0 on success, or an error code.
  */
-int adcRead(uint16_t *buf, size_t len);
+int adcRead(int16_t *buf, size_t len, uint16_t gain);
 
 /**
- * @brief Calculate the amplitude of the frequency component from the buffer.
+ * @brief Calculate the accumulated amplitude of frequency components from the buffer within a range of bins.
  * 
  * @param buf Buffer containing the data.
  * @param len Length of the buffer.
- * @return The calculated amplitude.
+ * @param begin Start bin index (inclusive).
+ * @param end End bin index (inclusive).
+ * @return The accumulated amplitude.
  */
-uint16_t dsp_freq_amp(int16_t *buf, size_t len);
+uint32_t dsp_freq_amp(int16_t *buf, size_t len, uint8_t begin, uint8_t end);
 
 
 
@@ -109,5 +111,18 @@ int init_mux(void);
  * @return 0 on success, or an error code.
  */
 int adc_init(void);
+
+/**
+ * @brief Detect if the operational amplifier output is clipping.
+ * 
+ * @param buf Buffer containing the sampled data values.
+ * @param len Length of the buffer.
+ * @param threshold Threshold for the accumulated magnitude.
+ * @param begin Start bin index (inclusive).
+ * @param end End bin index (inclusive).
+ * @return true if clipping is detected, false otherwise.
+ */
+bool detect_opamp_clipping(int16_t *buf, size_t len, uint32_t threshold, uint8_t begin, uint8_t end);
+
 
 

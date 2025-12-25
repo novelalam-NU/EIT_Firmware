@@ -122,7 +122,6 @@ int ad5270_init(uint8_t dev_handle) {
 }
 
 int ad5270_set_wiper(uint16_t r_code, uint8_t dev_handle) {
-
      if (dev_handle != SRC_INAMP_HANDLE && dev_handle != SENSE_INAMP_HANDLE) {
         ESP_LOGE(TAG, "Invalid device handle: %d", dev_handle);
         return ESP_ERR_INVALID_ARG;

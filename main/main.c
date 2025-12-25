@@ -56,17 +56,6 @@ void app_main(void)
         return;
     }
 
-    /* Initialize and test ADC */
-    test_dsp();
-    test_dsp();
-    test_dsp();
-    test_dsp();
-    return;
-
-
- 
-
-    
 
     if (init_mux() != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init Mux");
@@ -78,7 +67,6 @@ void app_main(void)
         return;
     }
 
-    vTaskDelay(300);
 
 
     if (signal_gen_start(SIG_GEN_FREQ) != ESP_OK) {
@@ -86,7 +74,6 @@ void app_main(void)
         return;
     }
 
-    vTaskDelay(100);
 
     /* Start the Signal Generator at the correct frequency */
     if ( signal_gen_start( SIG_GEN_FREQ ) != ESP_OK) {
@@ -100,6 +87,7 @@ void app_main(void)
     } 
  
  
+    vTaskDelay(pdTICKS_TO_MS(100000000));
 
     /* Create a Task for Measurement */
     if ( xTaskCreate( &measurement_task, meas_task_name, meas_task_stack_depth, NULL, meas_task_priority, &meas_task ) != pdPASS ) {

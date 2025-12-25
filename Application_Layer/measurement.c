@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
+#define TARGET_BUCKET 7
 
 static const char *TAG = "MEASUREMENT";
 
@@ -15,10 +16,14 @@ int16_t adc_packet_buffers[MAX_ADC_PACKETS][ADC_READINGS_PER_PACKET] = {0};
 
 void measurement_task(void* args) {
 
+    
     /* Wait for calibration task to end */
     if ( xSemaphoreTake( sem_cal_to_meas, portMAX_DELAY ) != pdPASS ) {
         ESP_LOGE(TAG, "Semaphore failed");
     }
+
+    ESP_LOGI(TAG, "Measurement task starting");
+
     /* Holds the magnitude of fft for target frequncy for that electrode configuration*/
     int16_t amps[NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS];
 
@@ -42,13 +47,13 @@ void measurement_task(void* args) {
                 // Small delay for settling
                 vTaskDelay(pdMS_TO_TICKS(1));
 
-                if (adcRead((uint16_t*)adc_packet_buffers[idx], ADC_READINGS_PER_PACKET) != ESP_OK) {
+                if (adcRead((int16_t*)adc_packet_buffers[idx], ADC_READINGS_PER_PACKET, 0) != ESP_OK) {
                     ESP_LOGE(TAG, "Failed to read ADC");
                     continue;
                 }
 
             //will run on core 1
-                uint16_t amplitude = dsp_freq_amp(adc_packet_buffers[idx], ADC_READINGS_PER_PACKET);
+                uint16_t amplitude = (uint16_t)dsp_freq_amp(adc_packet_buffers[idx], ADC_READINGS_PER_PACKET, TARGET_BUCKET, TARGET_BUCKET);
                 
                // Calculate difference: calibration_table->reference_amp - amplitude
                 if (idx < (NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS)) {

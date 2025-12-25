@@ -10,7 +10,11 @@
 static const char *TAG = "CALIBRATION";
 
 const uint16_t SCR_RDATA_CONST = 200; //Fixed source gain value
-uint16_t max_calibrated_sense_rdata = (uint16_t)MAX_GAIN;
+uint16_t max_calibrated_sense_rdata = 512; //holds the max gain  
+
+
+//have better logic to detect clippimng besides just seeing amplitude went down 
+
 
 
 /* 2d array to hold calibration values and electrode mappings */
@@ -61,24 +65,26 @@ Calibration_t calibration_table[NUM_ELECTRODE_PAIRS][NUM_SENSE_PAIRS] = {
 
 
 
-
 static int calibrate_gain_pair(Calibration_t *cal)
 {
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
+
     /* Used for ADC and DSP */
-    int16_t buffer[128];
+    int16_t buffer[BUFFER_LEN];
     size_t buffer_len = sizeof(buffer) / sizeof(buffer[0]);
 
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
     if (cal == NULL) {
+        //printf("calibrate_gain_pair: Line %d\n", __LINE__);
         return ESP_FAIL;
     }
 
-    uint16_t max_amp = 0;
-    uint16_t best_sense_gain = 0;
 
     /* Iterate through sense gain values from zero to current highest gain value before clipping */
-        for (uint16_t inAmp_sense_gain = 0; inAmp_sense_gain < max_calibrated_sense_rdata; inAmp_sense_gain+=10) {
+        for (uint16_t inAmp_sense_gain = 100; inAmp_sense_gain < max_calibrated_sense_rdata; inAmp_sense_gain+=10) {
 
             if (set_sense_inamp_gain(inAmp_sense_gain) != ESP_OK) {
+                //printf("calibrate_gain_pair: Line %d\n", __LINE__);
                 continue;
             }
             
@@ -86,117 +92,138 @@ static int calibrate_gain_pair(Calibration_t *cal)
             vTaskDelay(1); //so watch dog task not starved
 
             /* ADC read into a buffer */
-            if (adcRead((uint16_t*)buffer, buffer_len) != ESP_OK) {
+            if (adcRead((int16_t*)buffer, buffer_len, inAmp_sense_gain) != ESP_OK) {
+                //printf("calibrate_gain_pair: Line %d\n", __LINE__);
                 continue;
             }
 
-            /* Calculate amplitude at 50kHz */
-            uint16_t amplitude = dsp_freq_amp(buffer, buffer_len);
+            /* If clipping detected break out of the loop and set max_calibrated_sense_rdata to inAmp_sense_gain*/
+            bool clip_detected = detect_opamp_clipping(buffer, buffer_len, CLIP_THRESHOLD, CLIP_MIN_SAMPLES, CLIP_MAX_INDEX);
+            
+            // Check if clipping was detected in the current buffer
+            if (clip_detected) {
+                // Set the maximum calibrated sense gain to the current value before clipping occurred
+                max_calibrated_sense_rdata = inAmp_sense_gain;
+                // Store the amplitude at this gain level as the reference amplitude
+                cal->reference_amp = dsp_freq_amp(buffer, buffer_len, CALIBRATION_DSP_BUCKET, CALIBRATION_DSP_BUCKET); 
+                // Exit the loop since we've found the maximum safe gain
 
-            if (amplitude > max_amp) { //can replace with a threshold function
-                max_amp = amplitude;
-                best_sense_gain = inAmp_sense_gain;
+                printf("\n\nClip detected at gain level: %u\n", inAmp_sense_gain);
+                printf("Reference amplitude: %u\n\n", cal->reference_amp);
+                vTaskDelay(100);
+                
+                break;
+            } 
+            // Handle the last iteration: ensure reference amplitude is saved at maximum gain
+            else if (inAmp_sense_gain == max_calibrated_sense_rdata - 1) {
+                // Calculate and store the amplitude at the final gain level
+                uint32_t amplitude = dsp_freq_amp(buffer, buffer_len, CALIBRATION_DSP_BUCKET, CALIBRATION_DSP_BUCKET);
+                cal->reference_amp = amplitude;
+            } 
+            // Continue to next gain increment if no clipping and not the last iteration
+            else {
+                continue;
             }
-        }
 
-    /* Replace if and only if new smaller gain requried */
-    max_calibrated_sense_rdata =
-        ( best_sense_gain < max_calibrated_sense_rdata )  ? 
-        best_sense_gain : max_calibrated_sense_rdata;
-
-    
-    /* Set the tared voltage for electrode pair*/
-    if ( best_sense_gain < max_calibrated_sense_rdata ) {
-        cal->reference_amp = max_amp; //max_amp is amp at max_calibrated_sense_rdata
-    } else { // Recalculate amp at max gain
-        if (set_sense_inamp_gain(max_calibrated_sense_rdata) != ESP_OK) {
-            return ESP_FAIL;
+           
         }
-        
-        vTaskDelay(1); // Wait for stabilization
-        
-        int16_t buffer[128];
-        size_t buffer_len = sizeof(buffer) / sizeof(buffer[0]);
-        if (adcRead((uint16_t*)buffer, buffer_len) != ESP_OK) {
-            return ESP_FAIL;
-        }
-        
-        cal->reference_amp = dsp_freq_amp(buffer, buffer_len); // Get amplitude at max gain
-    }
-    
 
     return ESP_OK;
 }
 
 
 void calibration_task(void* args) {
-    ESP_LOGI(TAG, "Calibration done");
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
     srand(time(NULL));
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
     
     /* Intizlized Mux and set to 0,0 */
     //do this 
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
     vTaskDelay(pdMS_TO_TICKS(1000));
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
     if ( set_src_inamp_gain(SCR_RDATA_CONST) != ESP_OK) {
-
+        //printf("calibrate_gain_pair: Line %d\n", __LINE__);
     }
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
     
 
     for (uint8_t src_elec_pair = 0; src_elec_pair < NUM_ELECTRODE_PAIRS; src_elec_pair++ ) {
+        //printf("calibrate_gain_pair: Line %d\n", __LINE__);
         for (uint8_t sense_elec_pair = 0; sense_elec_pair < NUM_SENSE_PAIRS; sense_elec_pair++ ) {
+            //printf("calibrate_gain_pair: Line %d\n", __LINE__);
+
             /* Temp object */
             Calibration_t* curr_config = &calibration_table[src_elec_pair][sense_elec_pair];
+
+            //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
             /* Set mux to src_elec_pair, sense_elec_pair */
             if ( set_mux( curr_config->src_pos,
                           curr_config->src_neg,
                           curr_config->sense_pos,
                           curr_config->sense_neg ) != ESP_OK ) {
-             
+                //printf("calibrate_gain_pair: Line %d\n", __LINE__);
             }
+            //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
             if (calibrate_gain_pair(curr_config) != ESP_OK) {
+                //printf("calibrate_gain_pair: Line %d\n", __LINE__);
                 // handle calibration failure
             }
+            printf("Current max_calibrated_sense_rdata: %u\n", max_calibrated_sense_rdata);
+            //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
 
             ESP_LOGI(TAG, "Calibration[%u][%u]: reference_amp=%u",
                 src_elec_pair, sense_elec_pair,
                 curr_config->reference_amp);
+            //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
-             vTaskDelay(100);
+             //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
         }
     }
 
-    
+    // //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
-    ESP_LOGI(TAG, "\n=== Calibration Table Summary ===");
-    for (uint8_t i = 0; i < NUM_ELECTRODE_PAIRS; i++) {
-        for (uint8_t j = 0; j < NUM_SENSE_PAIRS; j++) {
-            ESP_LOGI(TAG, "[%u][%u] ref_amp=%u",
-                   i, j,
-                   calibration_table[i][j].reference_amp);
-        }
-    }
+    // ESP_LOGI(TAG, "\n=== Calibration Table Summary ===");
+    // //printf("calibrate_gain_pair: Line %d\n", __LINE__);
+    // for (uint8_t i = 0; i < NUM_ELECTRODE_PAIRS; i++) {
+    //     //printf("calibrate_gain_pair: Line %d\n", __LINE__);
+    //     for (uint8_t j = 0; j < NUM_SENSE_PAIRS; j++) {
+    //         //printf("calibrate_gain_pair: Line %d\n", __LINE__);
+    //         ESP_LOGI(TAG, "[%u][%u] ref_amp=%u",
+    //                i, j,
+    //                calibration_table[i][j].reference_amp);
+    //         //printf("calibrate_gain_pair: Line %d\n", __LINE__);
+    //     }
+    // }
 
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
     ESP_LOGI(TAG, "Final calibrated sense gain: %u", max_calibrated_sense_rdata);
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
 
 
 
-
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
+    ESP_LOGI(TAG, "Calibration done");
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
     /* Signal to the measurement task */
     if ( xSemaphoreGive(sem_cal_to_meas) != pdTRUE ) {
+        //printf("calibrate_gain_pair: Line %d\n", __LINE__);
         ESP_LOGE(TAG, "Failed to give semaphore");
     }
-
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
     vTaskDelete(NULL);
+    //printf("calibrate_gain_pair: Line %d\n", __LINE__);
 
 }

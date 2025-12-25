@@ -4,6 +4,8 @@
 #include "../Device_Drivers/AD7450_ADC.h"
 #include "test_data_gen.h"
 
+#define TARGET_BUCKET 7
+
 static const char *TAG = "HARDWARE_TEST";
 
 int test_adc(void) {
@@ -69,14 +71,23 @@ int test_mux(void) {
 
 
 
-int test_dsp(void) {
+int test_dsp(bool clipped, float clip_percent) {
     int16_t samples[TEST_GEN_N];
-    float test_freq = 54687.5f; // 20 kHz test signal
+    float test_freq = 54000.0f; // 20 kHz test signal
 
-   generate_sine_int16(samples, test_freq);
-    generate_sine_int16_multi(samples, test_freq, 10000.0f, 5000.0f);
-    uint16_t amplitude = dsp_freq_amp(samples, TEST_GEN_N);
+    // ESP_LOGI(TAG, "test_dsp: clipped=%d, clip_percent=%0.2f", clipped, clip_percent);
+    
+    //generate_sine_int16(samples, test_freq);
+    generate_sine_int16_multi_random_amp_clipped(samples, test_freq, 3.0f, 5.0f, clipped, clip_percent);
+    
+    uint16_t amplitude = (uint16_t)dsp_freq_amp(samples, TEST_GEN_N, TARGET_BUCKET, TARGET_BUCKET);
     ESP_LOGI(TAG, "test_dsp: Generated %0.1f Hz, Amplitude: %u", test_freq, amplitude);
     
+
+    bool clip_detected = detect_opamp_clipping(samples, TEST_GEN_N, 100, 10, 31);
+
+    ESP_LOGI(TAG, "test_dsp: clip_detected=%d, clipped=%d, clip_percent=%0.2f", clip_detected, clipped, clip_percent);
+
+
     return 0;
 }

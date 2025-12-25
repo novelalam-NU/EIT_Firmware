@@ -75,7 +75,7 @@ int AD5930_init(float init_freq) {
         return ret;
     } 
 
-        vTaskDelay(300);
+       
 
 
     /* Send second packet */

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /**
  * @brief Test the ADC by reading dummy data.
@@ -33,8 +34,9 @@ int test_mux(void);
 /**
  * @brief Tests the DSP (Digital Signal Processor) module.
  * 
+ * @param clipped If true, applies clipping to the generated test signal.
+ * @param clip_percent The percentage of the amplitude to clip at (0.0 to 1.0).
  * @return int Returns 0 on success, non-zero on failure.
  */
-int test_dsp(void);
-
+int test_dsp(bool clipped, float clip_percent);
 
