@@ -69,7 +69,7 @@ int adcRead(int16_t *buf, size_t len, uint16_t gain) {
 
     #ifdef ADC_MOCK
     if (gain >= 250) {
-        bool clipped = (rand() % 100) < 5;
+        bool clipped = (rand() % 100) < 2;
         generate_sine_int16_multi_random_amp_clipped(buf, 50000.0f, 0, 0, clipped, 0.98f);
 
     } else {
