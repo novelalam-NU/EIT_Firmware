@@ -1,7 +1,7 @@
 #ifndef AD7450_ADC_H
 #define AD7450_ADC_H
 
-#define AD7450_QUEUE_SIZE 100
+#define AD7450_QUEUE_SIZE 1000
 
 #include <stdint.h>
 
@@ -24,6 +24,6 @@ int AD7450_init();
  * @param len Number of samples to read.
  * @return 0 on success, or an error code.
  */
-int AD7450_Read(uint16_t *buf, uint32_t len);
+int AD7450_Read(int16_t *buf, uint32_t len);
 
 #endif // AD7450_ADC_H

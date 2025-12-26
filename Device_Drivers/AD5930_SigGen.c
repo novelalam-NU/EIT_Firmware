@@ -45,7 +45,7 @@ int AD5930_init(float init_freq) {
 
 
     if ( ret != ESP_OK ) {
-        ESP_LOGE(TAG, "Failed to add AD5930 to spi bus: %s", esp_err_to_name(ret));
+        //ESP_LOGE(TAG, "Failed to add AD5930 to spi bus: %s", esp_err_to_name(ret));
         return ret;
     } else {
         ESP_LOGI(TAG, "Added AD5930 to bus");
@@ -71,7 +71,7 @@ int AD5930_init(float init_freq) {
     ret = spi_device_transmit(ad5930_handle, &msg_set_freq);
     
     if ( ret != ESP_OK ) {
-        ESP_LOGE(TAG, "Failed to set freq for ad5930: %s", esp_err_to_name(ret));
+        //ESP_LOGE(TAG, "Failed to set freq for ad5930: %s", esp_err_to_name(ret));
         return ret;
     } 
 
@@ -85,7 +85,7 @@ int AD5930_init(float init_freq) {
     ret = spi_device_transmit(ad5930_handle, &msg_set_freq);
 
     if ( ret != ESP_OK ) {
-        ESP_LOGE(TAG, "Failed to set freq for ad5930: %s", esp_err_to_name(ret));
+        //ESP_LOGE(TAG, "Failed to set freq for ad5930: %s", esp_err_to_name(ret));
         return ret;
     }
 

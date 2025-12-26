@@ -9,13 +9,13 @@
 static const char *TAG = "HARDWARE_TEST";
 
 int test_adc(void) {
-    uint16_t buf[70];
+    int16_t buf[70];
     for (int i = 0; i < 64; i++) {
         buf[i] = i;
     }
 
     if ( AD7450_Read(buf, 64) != 0) {
-        ESP_LOGE(TAG, "test_adc failed");
+        ////ESP_LOGE(TAG, "test_adc failed");
         return -1;
     }
     ESP_LOGI(TAG, "test_adc passed");
@@ -26,7 +26,7 @@ int test_signal_gen(void) {
     // Dummy test for signal generator
     float freq = 1000.0f;
     if (signal_gen_start(freq) != 0) {
-        ESP_LOGE(TAG, "test_signal_gen failed");
+        //ESP_LOGE(TAG, "test_signal_gen failed");
         return -1;
     }
     ESP_LOGI(TAG, "test_signal_gen passed");
@@ -36,17 +36,17 @@ int test_signal_gen(void) {
 int test_inamp_pots(void) {
     // Dummy test for inamp pots
     if (init_inamp_pots() != 0) {
-        ESP_LOGE(TAG, "test_inamp_pots init failed");
+        //ESP_LOGE(TAG, "test_inamp_pots init failed");
         return -1;
     }
     
     if (set_src_inamp_gain(512) != 0) {
-        ESP_LOGE(TAG, "test_inamp_pots set src gain failed");
+        //ESP_LOGE(TAG, "test_inamp_pots set src gain failed");
         return -1;
     }
 
     if (set_sense_inamp_gain(512) != 0) {
-        ESP_LOGE(TAG, "test_inamp_pots set sense gain failed");
+        //ESP_LOGE(TAG, "test_inamp_pots set sense gain failed");
         return -1;
     }
 
@@ -57,12 +57,12 @@ int test_inamp_pots(void) {
 int test_mux(void) {
     // Dummy test for mux
     if (init_mux() != 0) {
-        ESP_LOGE(TAG, "test_mux init failed");
+        //ESP_LOGE(TAG, "test_mux init failed");
         return -1;
     }
 
     if (set_mux(1, 2, 3, 4) != 0) {
-        ESP_LOGE(TAG, "test_mux set failed");
+        //ESP_LOGE(TAG, "test_mux set failed");
         return -1;
     }
     ESP_LOGI(TAG, "test_mux passed");

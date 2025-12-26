@@ -65,7 +65,7 @@ spi_device_interface_config_t ad5270_configs[2] = {
 int ad5270_init(uint8_t dev_handle) {
 
     if (dev_handle != SRC_INAMP_HANDLE && dev_handle != SENSE_INAMP_HANDLE) {
-        ESP_LOGE(TAG, "Invalid device handle: %d", dev_handle);
+        //ESP_LOGE(TAG, "Invalid device handle: %d", dev_handle);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -86,7 +86,7 @@ int ad5270_init(uint8_t dev_handle) {
     
 
     if ( ret != ESP_OK ) {
-        ESP_LOGE(TAG, "Failed to add AD5270 (handle %d) to spi: %s", dev_handle, esp_err_to_name(ret));
+        //ESP_LOGE(TAG, "Failed to add AD5270 (handle %d) to spi: %s", dev_handle, esp_err_to_name(ret));
         return ret;
     } else {
         ESP_LOGI(TAG, "Added AD5270 (handle %d) to bus", dev_handle);
@@ -109,7 +109,7 @@ int ad5270_init(uint8_t dev_handle) {
     ret = spi_device_transmit(ad5270_handles[dev_handle], &msg1);
     
     if ( ret != ESP_OK ) {
-        ESP_LOGE(TAG, "Failed to transmit init command to device %d: %s", dev_handle, esp_err_to_name(ret));
+        //ESP_LOGE(TAG, "Failed to transmit init command to device %d: %s", dev_handle, esp_err_to_name(ret));
         return ret;
     } else {
         ESP_LOGI(TAG, "Device %d initialized successfully", dev_handle);
@@ -123,17 +123,17 @@ int ad5270_init(uint8_t dev_handle) {
 
 int ad5270_set_wiper(uint16_t r_code, uint8_t dev_handle) {
      if (dev_handle != SRC_INAMP_HANDLE && dev_handle != SENSE_INAMP_HANDLE) {
-        ESP_LOGE(TAG, "Invalid device handle: %d", dev_handle);
+        //ESP_LOGE(TAG, "Invalid device handle: %d", dev_handle);
         return ESP_ERR_INVALID_ARG;
     }
 
     if (ad5270_handles[dev_handle] == NULL) {
-        ESP_LOGE(TAG, "Device %d not initialized", dev_handle);
+        //ESP_LOGE(TAG, "Device %d not initialized", dev_handle);
         return ESP_ERR_INVALID_STATE;
     }
 
     if (r_code > MAX_RDAC) {
-        ESP_LOGE(TAG, "Resistance code %d out of range (max %d)", r_code, MAX_RDAC);
+        //ESP_LOGE(TAG, "Resistance code %d out of range (max %d)", r_code, MAX_RDAC);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -147,7 +147,7 @@ int ad5270_set_wiper(uint16_t r_code, uint8_t dev_handle) {
     esp_err_t ret = spi_device_transmit(ad5270_handles[dev_handle], &msg_set_wiper);
     
     if ( ret != ESP_OK ) {
-        ESP_LOGE(TAG, "Failed to set wiper for device %d: %s", dev_handle, esp_err_to_name(ret));
+        //ESP_LOGE(TAG, "Failed to set wiper for device %d: %s", dev_handle, esp_err_to_name(ret));
         return ret;
     } else {
         ESP_LOGD(TAG, "Wiper set to %d for device %d", r_code, dev_handle);

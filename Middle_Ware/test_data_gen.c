@@ -56,7 +56,7 @@ void generate_sine_int16_multi(int16_t *out, float freq_hz1, float freq_hz2, flo
 void generate_sine_int16_multi_random_amp(int16_t *out, float freq_hz1, float freq_hz2, float freq_hz3)
 {
 
-    ESP_LOGI("test_data_gen", "generate_sine_int16_multi_random_amp called");
+    //ESP_LOGI("test_data_gen", "generate_sine_int16_multi_random_amp called");
     // Generate random amplitudes between 1000.0f and 4000.0f
     float amp1 = 1000.0f + ((float)esp_random() / UINT32_MAX) * 3000.0f;
     float amp2 = 1000.0f + ((float)esp_random() / UINT32_MAX) * 3000.0f;
@@ -81,7 +81,7 @@ void generate_sine_int16_multi_random_amp(int16_t *out, float freq_hz1, float fr
 }
 void generate_sine_int16_multi_random_amp_clipped(int16_t *out, float freq_hz1, float freq_hz2, float freq_hz3, bool clipped, float clip_percent)
 {
-    ESP_LOGI("test_data_gen", "generate_sine_int16_multi_random_amp_clipped called");
+    //ESP_LOGI("test_data_gen", "generate_sine_int16_multi_random_amp_clipped called");
     // amp1 is dominant, fixed amplitude. Reduced to 30000 to avoid int16_t overflow (max 32767)
     float amp1 = 30000.0f;
     float amp2 = 0;
