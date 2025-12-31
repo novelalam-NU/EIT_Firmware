@@ -3,6 +3,7 @@
 #include "esp_log.h"
 #include "../Device_Drivers/AD7450_ADC.h"
 #include "test_data_gen.h"
+#include "freertos/FreeRTOS.h"
 
 #define TARGET_BUCKET 7
 
@@ -34,20 +35,27 @@ int test_signal_gen(void) {
 }
 
 int test_inamp_pots(void) {
+    uint16_t in_amp_scr = 400;
+    uint16_t in_amp_sense = 200;
+
     // Dummy test for inamp pots
     if (init_inamp_pots() != 0) {
         //ESP_LOGE(TAG, "test_inamp_pots init failed");
         return -1;
     }
     
-    if (set_src_inamp_gain(512) != 0) {
-        //ESP_LOGE(TAG, "test_inamp_pots set src gain failed");
-        return -1;
-    }
-
-    if (set_sense_inamp_gain(512) != 0) {
-        //ESP_LOGE(TAG, "test_inamp_pots set sense gain failed");
-        return -1;
+    for (int i = 512; i > 0; i--) {
+        vTaskDelay(pdMS_TO_TICKS(100));
+        ESP_LOGI(TAG, "Setting src/sns gain to %d", i);
+        if (set_src_inamp_gain(i) != 0) {
+            ESP_LOGE(TAG, "test_inamp_pots set src gain failed");
+            return -1;
+        }
+        
+        if (set_sense_inamp_gain(i) != 0) {
+            ESP_LOGE(TAG, "test_inamp_pots set sense gain failed");
+            return -1;
+        }
     }
 
     ESP_LOGI(TAG, "test_inamp_pots passed");
@@ -61,11 +69,15 @@ int test_mux(void) {
         return -1;
     }
 
-    if (set_mux(1, 2, 3, 4) != 0) {
-        //ESP_LOGE(TAG, "test_mux set failed");
-        return -1;
+    int ch1 = 5, ch2 = 5, ch3 = 5, ch4 = 5;
+    for (int i = 0; i < 10000; i++) {
+        if (set_mux(ch1, ch2, ch3, ch4) != 0) {
+            //ESP_LOGE(TAG, "test_mux set failed");
+            return -1;
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
+        ESP_LOGI(TAG, "test_mux passed");
     }
-    ESP_LOGI(TAG, "test_mux passed");
     return 0;
 }
 
@@ -90,4 +102,14 @@ int test_dsp(bool clipped, float clip_percent) {
 
 
     return 0;
+}
+
+void test_function(void) {
+    //test_adc();
+    //test_signal_gen();
+    // test_inamp_pots();
+    test_mux();
+      
+
+    // test_dsp(false, 0.0f);
 }

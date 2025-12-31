@@ -3,18 +3,20 @@
   "idf.espIdfPath": "/Users/novelalam/esp/v5.2.1/esp-idf",
   "idf.pythonInstallPath": "/Users/novelalam/.pyenv/shims/python",
   "idf.openOcdConfigs": [
-    "board/esp32c3-ftdi.cfg"
+    "board/esp32c3-bridge.cfg"
   ],
   "idf.port": "/dev/tty.usbmodem2101",
   "idf.toolsPath": "/Users/novelalam/.espressif",
   "idf.customExtraVars": {
+    "OPENOCD_SCRIPTS": "/Users/novelalam/.espressif/tools/openocd-esp32/v0.12.0-esp32-20230921/openocd-esp32/share/openocd/scripts",
+    "ESP_ROM_ELF_DIR": "/Users/novelalam/.espressif/tools/esp-rom-elfs/20230320/",
     "IDF_TARGET": "esp32c3"
   },
   "clangd.path": "/Users/novelalam/.espressif/tools/esp-clang/16.0.1-fe4f10a809/esp-clang/bin/clangd",
   "clangd.arguments": [
     "--background-index",
-    "--query-driver=/Users/novelalam/.espressif/tools/riscv32-esp-elf/esp-13.2.0_20230928/riscv32-esp-elf/bin/riscv32-esp-elf-gcc",
-    "--compile-commands-dir=${workspaceFolder}/build"
+    "--query-driver=**",
+    "--compile-commands-dir=/Users/novelalam/EIT_Firmware/build"
   ],
   "idf.flashType": "UART"
 }

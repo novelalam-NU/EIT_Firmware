@@ -47,10 +47,10 @@ int init_src_sense_ADG73() {
 int set_src_sense_ADG73(uint8_t src_pos, uint8_t src_neg, uint8_t sense_pos, uint8_t sense_neg) {
 
     /* Pack data into a single 32-bit integer for faster writing (Little Endian) */
-    uint32_t payload = (uint32_t)(1 << src_pos) | 
-                       ((uint32_t)(1 << src_neg) << 8) | 
-                       ((uint32_t)(1 << sense_pos) << 16) | 
-                       ((uint32_t)(1 << sense_neg) << 24);
+    uint32_t payload = (uint32_t)(1 << (sense_neg - 1)) | 
+                       ((uint32_t)(1 << (sense_pos - 1)) << 8) | 
+                       ((uint32_t)(1 << (src_neg - 1)) << 16) | 
+                       ((uint32_t)(1 << (src_pos - 1)) << 24);
 
     /* Write directly to the transaction buffer */
     *(uint32_t*)message.tx_data = payload;

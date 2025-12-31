@@ -32,6 +32,12 @@ int test_inamp_pots(void);
 int test_mux(void);
 
 /**
+ * @brief Run all hardware tests.
+ */
+void test_function(void);
+
+
+/**
  * @brief Tests the DSP (Digital Signal Processor) module.
  * 
  * @param clipped If true, applies clipping to the generated test signal.

@@ -31,7 +31,7 @@ static const spi_bus_config_t buscfg = {
 };
 
 int init_spi(void) {
-    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO); //SPI_DMA_DISABLED
     if (ret == ESP_OK) {
         //ESP_LOGI(TAG, "SPI bus initialized successfully");
     } else if (ret == ESP_ERR_INVALID_STATE) {
@@ -196,7 +196,7 @@ int set_mux(uint8_t src_pos, uint8_t src_neg, uint8_t sense_pos, uint8_t sense_n
 
 
             if (ret != ESP_OK) {
-                //ESP_LOGE(TAG, "Failed to set mux: %s", esp_err_to_name(ret));
+                ESP_LOGE(TAG, "Failed to set mux: %s", esp_err_to_name(ret));
                 return ret;
             }
     return ESP_OK;

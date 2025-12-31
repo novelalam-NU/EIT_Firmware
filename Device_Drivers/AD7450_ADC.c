@@ -98,10 +98,9 @@ int AD7450_Read(int16_t *buf, uint32_t len) {
         }
     }
     #else
-    /* Normal blocking transmit optimized */
-    /* REplacing multitranaction with one */
+
     spi_transaction_t t = {
-        .length = 16*64,
+        .length = 64*16,
         .flags = 0,
         .tx_data = {0},
         .rx_buffer = buf

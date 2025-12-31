@@ -13,7 +13,7 @@
 #include "../Middle_Ware/hardware.h"
 #include "../Middle_Ware/hardware-test.h"
 
-#define SIG_GEN_FREQ (50000.0f) 
+#define SIG_GEN_FREQ (43210.0f) 
 
 static const char *TAG = "MAIN";
 
@@ -44,11 +44,14 @@ void app_main(void)
         //ESP_LOGE(TAG, "Failed to create semaphore");
     }
 
+    
+
     /* Initialize SPI Bus */
     if (init_spi() != ESP_OK) {
         //ESP_LOGE(TAG, "Failed to init SPI");
         return;
     }
+
 
     /* Initialize ADC */
     if (adc_init() != ESP_OK) {
@@ -62,24 +65,24 @@ void app_main(void)
     }
 
 
-    if (init_inamp_pots() != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to init inamp pots");
-        return;
-    }
+    // if (init_inamp_pots() != ESP_OK) {
+    //     //ESP_LOGE(TAG, "Failed to init inamp pots");
+    //     return;
+    // }
 
 
 
     if (signal_gen_start(SIG_GEN_FREQ) != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to initialize Signal Generator");
+        ESP_LOGE(TAG, "Failed to initialize Signal Generator");
         return;
     }
 
 
-    /* Start the Signal Generator at the correct frequency */
-    if ( signal_gen_start( SIG_GEN_FREQ ) != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to intialize Signal Generator");
-    }
+        
+    test_function();
 
+
+  
 
     // /* Create a Task to find all the calibration values */
     // void* cal_arg = NULL;
@@ -88,6 +91,9 @@ void app_main(void)
     // } 
  
  
+
+    vTaskDelay(pdMS_TO_TICKS(100000));
+
 
     /* Create a Task for Measurement */
     if ( xTaskCreate( &measurement_task, meas_task_name, meas_task_stack_depth, NULL, meas_task_priority, &meas_task ) != pdPASS ) {

@@ -18,18 +18,26 @@ int16_t adc_packet_buffers[MAX_ADC_PACKETS][ADC_READINGS_PER_PACKET] = {0};
 
 void measurement_task(void* args) {
 
-    
-    // /* Wait for calibration task to end */
-    // if ( xSemaphoreTake( sem_cal_to_meas, portMAX_DELAY ) != pdPASS ) {
-    //     //ESP_LOGE(TAG, "Semaphore failed");
-    // }
 
-    //ESP_LOGI(TAG, "Measurement task starting");
+
+
+
+    /* Wait for calibration task to end */
+    if ( xSemaphoreTake( sem_cal_to_meas, portMAX_DELAY ) != pdPASS ) {
+        //ESP_LOGE(TAG, "Semaphore failed");
+    }
+
+    ESP_LOGI(TAG, "Measurement task starting");
 
     /* Holds the magnitude of fft for target frequncy for that electrode configuration*/
     int16_t amps[NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS];
 
     while (1) {
+
+    
+   
+
+        vTaskDelay(1);
         int idx = 0; //reset index
         
         //hardware timer
@@ -44,11 +52,11 @@ void measurement_task(void* args) {
             for (uint8_t sense_elec_pair = 0; sense_elec_pair < NUM_SENSE_PAIRS; sense_elec_pair++) {
                 Calibration_t* curr_config = &calibration_table[src_elec_pair][sense_elec_pair];
 
-                if (set_mux(curr_config->src_pos, curr_config->src_neg, 
-                            curr_config->sense_pos, curr_config->sense_neg) != ESP_OK) {
-                    //ESP_LOGE(TAG, "Failed to set mux");
-                    continue;
-                }
+                // if (set_mux(curr_config->src_pos, curr_config->src_neg, 
+                //             curr_config->sense_pos, curr_config->sense_neg) != ESP_OK) {
+                //     //ESP_LOGE(TAG, "Failed to set mux");
+                //     continue;
+                // }
 
                 // Small delay for settling
                 // ets_delay_us(100);
