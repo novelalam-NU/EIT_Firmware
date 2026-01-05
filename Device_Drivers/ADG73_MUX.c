@@ -20,10 +20,10 @@ static spi_device_handle_t ADG73_handle = NULL;
 
 /* Device config*/
 static const spi_device_interface_config_t ADG73_config = {
-    .mode = 3, //(CPOL=1, CPHA=1)
+    .mode = 1, //(CPOL=0, CPHA=1)
     .clock_source = SPI_CLK_SRC_DEFAULT,
     .duty_cycle_pos = 128,
-    .clock_speed_hz = SPI_MASTER_FREQ_40M, // Match ADC speed to avoid driver reconfiguration overhead
+    .clock_speed_hz = SPI_MASTER_FREQ_8M, // Match ADC speed to avoid driver reconfiguration overhead
     .spics_io_num = PIN_CS_MUX,
     .queue_size = 1
 };
@@ -46,15 +46,17 @@ int init_src_sense_ADG73() {
 
 int set_src_sense_ADG73(uint8_t src_pos, uint8_t src_neg, uint8_t sense_pos, uint8_t sense_neg) {
 
-    /* Pack data into a single 32-bit integer for faster writing (Little Endian) */
-    uint32_t payload = (uint32_t)(1 << (sense_neg - 1)) | 
-                       ((uint32_t)(1 << (sense_pos - 1)) << 8) | 
-                       ((uint32_t)(1 << (src_neg - 1)) << 16) | 
-                       ((uint32_t)(1 << (src_pos - 1)) << 24);
+    /* Pack data into a single 32-bit integer for faster writing (mux1/measr1 is first mux so only keeps lsb) */
+    uint32_t payload = (uint32_t)(1 << (src_pos - 1)) | 
+                       ((uint32_t)(1 << (src_neg - 1)) << 8) | 
+                       ((uint32_t)(1 << (sense_pos - 1)) << 16) | 
+                       ((uint32_t)(1 << (sense_neg - 1)) << 24);
 
     /* Write directly to the transaction buffer */
     *(uint32_t*)message.tx_data = payload;
-
+    
+    /* Log the packet */
+    ESP_LOG_BUFFER_HEX(TAG, message.tx_data, 4);
     /* Use polling transmit for faster execution of small transactions */
     if ( spi_device_polling_transmit(ADG73_handle, &message) != ESP_OK ) {
         return -1;

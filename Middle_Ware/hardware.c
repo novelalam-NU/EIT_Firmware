@@ -33,11 +33,15 @@ static const spi_bus_config_t buscfg = {
 int init_spi(void) {
     esp_err_t ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO); //SPI_DMA_DISABLED
     if (ret == ESP_OK) {
-        //ESP_LOGI(TAG, "SPI bus initialized successfully");
+        #if DEBUG
+        ESP_LOGI(TAG, "SPI bus initialized successfully");
+        #endif
     } else if (ret == ESP_ERR_INVALID_STATE) {
         ESP_LOGD(TAG, "SPI bus already initialized");
     } else {
-        //ESP_LOGE(TAG, "Failed to init SPI bus: %s", esp_err_to_name(ret));
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to init SPI bus: %s", esp_err_to_name(ret));
+        #endif
         return ret;
     }
     return ESP_OK;
@@ -49,22 +53,32 @@ int signal_gen_start(float freq) {
 
 int set_src_inamp_gain(uint16_t src_gain) {
     if ( ad5270_set_wiper(src_gain, SRC_INAMP_HANDLE) != 0 ) {
-        //ESP_LOGE(TAG, "Failed to set wiper");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to set wiper");
+        #endif
     } 
-    //ESP_LOGI(TAG, "set_src_inamp_gain called with src_gain=%u", src_gain);
+    #if DEBUG
+    ESP_LOGI(TAG, "set_src_inamp_gain called with src_gain=%u", src_gain);
+    #endif
     return ESP_OK;
 }
 
 int set_sense_inamp_gain(uint16_t sense_gain) {
     if ( ad5270_set_wiper(sense_gain, SENSE_INAMP_HANDLE) != 0 ) {
-        //ESP_LOGE(TAG, "Failed to set wiper");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to set wiper");
+        #endif
     } 
-    //ESP_LOGI(TAG, "set_sense_inamp_gain called with sense_gain=%u", sense_gain);
+    #if DEBUG
+    ESP_LOGI(TAG, "set_sense_inamp_gain called with sense_gain=%u", sense_gain);
+    #endif
     return ESP_OK;
 }
 
 int adcRead(int16_t *buf, size_t len, uint16_t gain) {
-    // ESP_LOGI(TAG, "adcRead called with buffer length=%zu", len);
+    #if DEBUG
+    ESP_LOGI(TAG, "adcRead called with buffer length=%zu", len);
+    #endif
     
     #ifdef ADC_MOCK
     if (gain >= 250) {
@@ -88,7 +102,9 @@ int adcRead(int16_t *buf, size_t len, uint16_t gain) {
 static int16_t w[64];
 uint32_t dsp_freq_amp(int16_t *buf, size_t len, uint8_t begin, uint8_t end) {
     return 0;
-    //ESP_LOGI(TAG, "dsp_freq_amp called with buffer length=%zu, begin=%u, end=%u", len, begin, end);
+    #if DEBUG
+    ESP_LOGI(TAG, "dsp_freq_amp called with buffer length=%zu, begin=%u, end=%u", len, begin, end);
+    #endif
     /* Add in the imagninary component and apply Hanning window */
     int16_t real_and_imagine[128] = {0};
 
@@ -102,26 +118,38 @@ uint32_t dsp_freq_amp(int16_t *buf, size_t len, uint8_t begin, uint8_t end) {
     static bool fft_initialized = false;
     if (!fft_initialized) {
         if (dsps_fft2r_init_sc16(w, 64) != ESP_OK) {
-            //ESP_LOGE(TAG, "Failed to init sine/cos tables");
+            #if DEBUG
+            ESP_LOGE(TAG, "Failed to init sine/cos tables");
+            #endif
             return 0;
         }
         fft_initialized = true;
     }
-    //ESP_LOGI(TAG, "FFT sine/cos tables initialized");
+    #if DEBUG
+    ESP_LOGI(TAG, "FFT sine/cos tables initialized");
+    #endif
 
     /* Run the actual FFT */
     
     if ( dsps_fft2r_sc16_ansi_(real_and_imagine, len, w) != ESP_OK ) {
-        //ESP_LOGE(TAG, "Failed to run FFT");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to run FFT");
+        #endif
         return 0;
     }
-    //ESP_LOGI(TAG, "FFT computation completed");
+    #if DEBUG
+    ESP_LOGI(TAG, "FFT computation completed");
+    #endif
 
     if ( dsps_bit_rev_sc16_ansi(real_and_imagine, len) != ESP_OK ) {
-         //ESP_LOGE(TAG, "Failed to reverse FFT");
+         #if DEBUG
+         ESP_LOGE(TAG, "Failed to reverse FFT");
+         #endif
         return 0;
     }
-    //ESP_LOGI(TAG, "Bit reversal completed");
+    #if DEBUG
+    ESP_LOGI(TAG, "Bit reversal completed");
+    #endif
 
     uint32_t accumulated_mag = 0;
     uint32_t max_mag = 0;
@@ -163,7 +191,9 @@ uint32_t dsp_freq_amp(int16_t *buf, size_t len, uint8_t begin, uint8_t end) {
     //      //printf("Ratio Bin 8/6: %f\n", (float)mag8 / mag6);
     // }
 
-    //ESP_LOGI(TAG, "DSP frequency amplitude calculation finished");
+    #if DEBUG
+    ESP_LOGI(TAG, "DSP frequency amplitude calculation finished");
+    #endif
 
     //printf("Max magnitude: %lu at bin 7\n", max_mag);
     return accumulated_mag;
@@ -174,23 +204,29 @@ uint32_t dsp_freq_amp(int16_t *buf, size_t len, uint8_t begin, uint8_t end) {
 
 int init_inamp_pots() {
     if ( ad5270_init( SRC_INAMP_HANDLE ) != 0) {
-        //ESP_LOGE(TAG, "Failed to init SRC_INAMP_HANDLE");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to init SRC_INAMP_HANDLE");
+        #endif
         return -1;
     }
 
     if ( ad5270_init( SENSE_INAMP_HANDLE ) != 0) {
-        //ESP_LOGE(TAG, "Failed to init SENSE_INAMP_HANDLE");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to init SENSE_INAMP_HANDLE");
+        #endif
         return -1;
     }
     
-    //ESP_LOGI(TAG, " Pots initialized");
+    #if DEBUG
+    ESP_LOGI(TAG, " Pots initialized");
+    #endif
     return ESP_OK;
 }
 
 int set_mux(uint8_t src_pos, uint8_t src_neg, uint8_t sense_pos, uint8_t sense_neg) {
 
-    //ESP_LOGI(TAG, "set_mux called with src_pos=%u, src_neg=%u, sense_pos=%u, sense_neg=%u",
-    //         src_pos, src_neg, sense_pos, sense_neg);
+    ESP_LOGI(TAG, "set_mux called with src_pos=%u, src_neg=%u, sense_pos=%u, sense_neg=%u",
+            src_pos, src_neg, sense_pos, sense_neg);
 
            esp_err_t ret = set_src_sense_ADG73(src_pos, src_neg, sense_pos, sense_neg);
 
@@ -204,10 +240,14 @@ int set_mux(uint8_t src_pos, uint8_t src_neg, uint8_t sense_pos, uint8_t sense_n
 int init_mux(void) {
     esp_err_t ret = init_src_sense_ADG73();
     if (ret != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to initialize MUX: %s", esp_err_to_name(ret));
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to initialize MUX: %s", esp_err_to_name(ret));
+        #endif
         return ret;
     }
-    //ESP_LOGI(TAG, "MUX initialized successfully");
+    #if DEBUG
+    ESP_LOGI(TAG, "MUX initialized successfully");
+    #endif
     return ESP_OK;
 }
 

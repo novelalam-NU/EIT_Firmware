@@ -5,7 +5,7 @@
   "idf.openOcdConfigs": [
     "board/esp32c3-bridge.cfg"
   ],
-  "idf.port": "/dev/tty.usbmodem2101",
+  "idf.port": "/dev/tty.usbmodem1101",
   "idf.toolsPath": "/Users/novelalam/.espressif",
   "idf.customExtraVars": {
     "OPENOCD_SCRIPTS": "/Users/novelalam/.espressif/tools/openocd-esp32/v0.12.0-esp32-20230921/openocd-esp32/share/openocd/scripts",

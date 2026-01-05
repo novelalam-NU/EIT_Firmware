@@ -19,14 +19,16 @@ int AD7450_init() {
         .address_bits = 0,
         .dummy_bits = 0,
         .mode = 3, // CPOL=1, CPHA=1 (SCLK idle high, sample on rising edge)
-        .clock_speed_hz = SPI_MASTER_FREQ_8M, // 8 MHz
+        .clock_speed_hz = 100, // 8 MHz
         .spics_io_num = PIN_CS_ADC,
         .queue_size = AD7450_QUEUE_SIZE,
     };
 
     esp_err_t ret = spi_bus_add_device(SPI2_HOST, &devcfg, &ad7450_handle);
     if (ret != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to add device to SPI bus: %s", esp_err_to_name(ret));
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to add device to SPI bus: %s", esp_err_to_name(ret));
+        #endif
         return ret;
     }
 
@@ -38,7 +40,9 @@ int AD7450_init() {
     
     ret = spi_device_transmit(ad7450_handle, &t);
     if (ret != ESP_OK) {
-        //ESP_LOGE(TAG, "Dummy read failed: %s", esp_err_to_name(ret));
+        #if DEBUG
+        ESP_LOGE(TAG, "Dummy read failed: %s", esp_err_to_name(ret));
+        #endif
         return ret;
     }
 
@@ -48,12 +52,16 @@ int AD7450_init() {
 
 int AD7450_Read(int16_t *buf, uint32_t len) {
     if (ad7450_handle == NULL) {
-        //ESP_LOGE(TAG, "AD7450 not initialized");
+        #if DEBUG
+        ESP_LOGE(TAG, "AD7450 not initialized");
+        #endif
         return -1;
     }
 
     if (len > AD7450_QUEUE_SIZE) {
-        //ESP_LOGE(TAG, "Read length %lu exceeds queue size %d", len, AD7450_QUEUE_SIZE);
+        #if DEBUG
+        ESP_LOGE(TAG, "Read length %lu exceeds queue size %d", len, AD7450_QUEUE_SIZE);
+        #endif
         return -1;
     }
 
@@ -62,7 +70,9 @@ int AD7450_Read(int16_t *buf, uint32_t len) {
 
     /* Acquire the bus*/
     if (spi_device_acquire_bus(ad7450_handle, portMAX_DELAY) != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to acquire SPI bus");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to acquire SPI bus");
+        #endif
         return -1;
     }
 
@@ -83,7 +93,9 @@ int AD7450_Read(int16_t *buf, uint32_t len) {
         }
         
         
-        //ESP_LOGE(TAG, "send packet %lu", curr_queue_trans);
+        #if DEBUG
+        ESP_LOGE(TAG, "send packet %lu", curr_queue_trans);
+        #endif
 
     }
 
@@ -92,7 +104,9 @@ int AD7450_Read(int16_t *buf, uint32_t len) {
         spi_transaction_t* trans_result;
         
         if (spi_device_get_trans_result(ad7450_handle, &trans_result, portMAX_DELAY) != ESP_OK) {
-            //ESP_LOGE(TAG, "Failed to get SPI transaction result");
+            #if DEBUG
+            ESP_LOGE(TAG, "Failed to get SPI transaction result");
+            #endif
             spi_device_release_bus(ad7450_handle);
             return -1;
         }
@@ -100,7 +114,7 @@ int AD7450_Read(int16_t *buf, uint32_t len) {
     #else
 
     spi_transaction_t t = {
-        .length = 64*16,
+        .length = 16,
         .flags = 0,
         .tx_data = {0},
         .rx_buffer = buf
@@ -139,7 +153,9 @@ int AD7450_Read(int16_t *buf, uint32_t len) {
     //     spi_transaction_t* trans_result;
 
     //     if (spi_device_get_trans_result(ad7450_handle, &trans_result, portMAX_DELAY) != ESP_OK) {
-    //         //ESP_LOGE(TAG, "Failed to get SPI transaction result");
+    #if DEBUG
+    ESP_LOGE(TAG, "Failed to get SPI transaction result");
+    #endif
     //         spi_device_release_bus(ad7450_handle);
     //         return -1;
     //     }

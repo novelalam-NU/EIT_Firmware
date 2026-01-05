@@ -24,7 +24,9 @@ void measurement_task(void* args) {
 
     /* Wait for calibration task to end */
     if ( xSemaphoreTake( sem_cal_to_meas, portMAX_DELAY ) != pdPASS ) {
-        //ESP_LOGE(TAG, "Semaphore failed");
+        #if DEBUG
+        ESP_LOGE(TAG, "Semaphore failed");
+        #endif
     }
 
     ESP_LOGI(TAG, "Measurement task starting");
@@ -54,7 +56,9 @@ void measurement_task(void* args) {
 
                 // if (set_mux(curr_config->src_pos, curr_config->src_neg, 
                 //             curr_config->sense_pos, curr_config->sense_neg) != ESP_OK) {
-                //     //ESP_LOGE(TAG, "Failed to set mux");
+                #if DEBUG
+                ESP_LOGE(TAG, "Failed to set mux");
+                #endif
                 //     continue;
                 // }
 
@@ -62,7 +66,9 @@ void measurement_task(void* args) {
                 // ets_delay_us(100);
 
                 if (adcRead((int16_t*)adc_packet_buffers[idx], ADC_READINGS_PER_PACKET, 0) != ESP_OK) {
-                    //ESP_LOGE(TAG, "Failed to read ADC");
+                    #if DEBUG
+                    ESP_LOGE(TAG, "Failed to read ADC");
+                    #endif
                     continue;
                 }
 
@@ -87,9 +93,13 @@ void measurement_task(void* args) {
         // for (int i = 0; i < (NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS); i++) {
         //     int src_pair = i / NUM_SENSE_PAIRS;
         //     int sense_pair = i % NUM_SENSE_PAIRS;
-        //     //ESP_LOGI(TAG, "Src:%u Sense:%u -> %d ", src_pair, sense_pair, amps[i]);
+        #if DEBUG
+        // ESP_LOGI(TAG, "Src:%u Sense:%u -> %d ", src_pair, sense_pair, amps[i]);
+        #endif
         // }
-        //ESP_LOGI(TAG, "End of Cycle");
+        #if DEBUG
+        ESP_LOGI(TAG, "End of Cycle");
+        #endif
 
     }
 }

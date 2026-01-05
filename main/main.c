@@ -18,10 +18,10 @@
 static const char *TAG = "MAIN";
 
 /* Task Details for Calibration Task*/
-// TaskHandle_t cal_task;
-// static const char* cal_task_name = "CalibrationTask";
-// static const configSTACK_DEPTH_TYPE cal_task_stack_depth = 4000;
-// static const UBaseType_t cal_task_priority = 5;
+TaskHandle_t cal_task;
+static const char* cal_task_name = "CalibrationTask";
+static const configSTACK_DEPTH_TYPE cal_task_stack_depth = 4000;
+static const UBaseType_t cal_task_priority = 5;
 
 /* Task Details for Measurement Task */
 TaskHandle_t meas_task;
@@ -41,32 +41,42 @@ void app_main(void)
     sem_cal_to_meas = xSemaphoreCreateBinary();
 
     if (sem_cal_to_meas == NULL ) {
-        //ESP_LOGE(TAG, "Failed to create semaphore");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to create semaphore");
+        #endif
     }
 
     
 
     /* Initialize SPI Bus */
     if (init_spi() != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to init SPI");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to init SPI");
+        #endif
         return;
     }
 
 
     /* Initialize ADC */
     if (adc_init() != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to init ADC");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to init ADC");
+        #endif
         return;
     }
 
 
     if (init_mux() != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to init Mux");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to init Mux");
+        #endif
     }
 
 
     // if (init_inamp_pots() != ESP_OK) {
-    //     //ESP_LOGE(TAG, "Failed to init inamp pots");
+    #if DEBUG
+    ESP_LOGE(TAG, "Failed to init inamp pots");
+    #endif
     //     return;
     // }
 
@@ -79,25 +89,28 @@ void app_main(void)
 
 
         
-    test_function();
+    // test_function();
 
 
   
 
     // /* Create a Task to find all the calibration values */
-    // void* cal_arg = NULL;
-    // if ( xTaskCreate( &calibration_task, cal_task_name, cal_task_stack_depth, cal_arg, cal_task_priority, &cal_task ) != pdPASS ) {
-    //     //ESP_LOGE(TAG, "Failed to create thread");
-    // } 
+    void* cal_arg = NULL;
+    if ( xTaskCreate( &calibration_task, cal_task_name, cal_task_stack_depth, cal_arg, cal_task_priority, &cal_task ) != pdPASS ) {
+    #if DEBUG
+        ESP_LOGE(TAG, "Failed to create thread");
+    #endif
+    } 
  
  
 
-    vTaskDelay(pdMS_TO_TICKS(100000));
 
 
     /* Create a Task for Measurement */
     if ( xTaskCreate( &measurement_task, meas_task_name, meas_task_stack_depth, NULL, meas_task_priority, &meas_task ) != pdPASS ) {
-        //ESP_LOGE(TAG, "Failed to create measurement task");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to create measurement task");
+        #endif
     }
 
 }

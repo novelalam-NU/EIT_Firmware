@@ -138,7 +138,9 @@ void calibration_task(void* args) {
     
 
     if ( set_src_inamp_gain(SCR_RDATA_CONST) != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to set source inamp gain");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to set source inamp gain");
+        #endif
         vTaskDelete(NULL);
         return;
     }
@@ -159,13 +161,17 @@ void calibration_task(void* args) {
                           curr_config->src_neg,
                           curr_config->sense_pos,
                           curr_config->sense_neg ) != ESP_OK ) {
-                //ESP_LOGE(TAG, "Failed to set mux for pair [%u][%u]", src_elec_pair, sense_elec_pair);
+                #if DEBUG
+                ESP_LOGE(TAG, "Failed to set mux for pair [%u][%u]", src_elec_pair, sense_elec_pair);
+                #endif
                 continue;
             }
             
 
             if (calibrate_gain_pair(curr_config) != ESP_OK) {
-                //ESP_LOGE(TAG, "Failed to calibrate gain for pair [%u][%u]", src_elec_pair, sense_elec_pair);
+                #if DEBUG
+                ESP_LOGE(TAG, "Failed to calibrate gain for pair [%u][%u]", src_elec_pair, sense_elec_pair);
+                #endif
                 continue;
             }
                 // handle calibration failure
@@ -188,7 +194,9 @@ void calibration_task(void* args) {
 
     /* Set the calibrated sense gain once for all pairs */
     if (set_sense_inamp_gain(max_calibrated_sense_rdata) != ESP_OK) {
-        //ESP_LOGE(TAG, "Failed to set sense gain for tare measurement");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to set sense gain for tare measurement");
+        #endif
     }
     
     vTaskDelay(1);
@@ -203,7 +211,9 @@ void calibration_task(void* args) {
                         curr_config->src_neg,
                         curr_config->sense_pos,
                         curr_config->sense_neg) != ESP_OK) {
-                //ESP_LOGE(TAG, "Failed to set mux for tare pair [%u][%u]", src_elec_pair, sense_elec_pair);
+                #if DEBUG
+                ESP_LOGE(TAG, "Failed to set mux for tare pair [%u][%u]", src_elec_pair, sense_elec_pair);
+                #endif
                 continue;
             }
             
@@ -213,7 +223,9 @@ void calibration_task(void* args) {
             int16_t tare_buffer[BUFFER_LEN];
             size_t buffer_len = sizeof(tare_buffer) / sizeof(tare_buffer[0]);
             if (adcRead(tare_buffer, buffer_len, max_calibrated_sense_rdata) != ESP_OK) {
-                //ESP_LOGE(TAG, "Failed to read tare for pair [%u][%u]", src_elec_pair, sense_elec_pair);
+                #if DEBUG
+                ESP_LOGE(TAG, "Failed to read tare for pair [%u][%u]", src_elec_pair, sense_elec_pair);
+                #endif
                 continue;
             }
             
@@ -229,7 +241,9 @@ void calibration_task(void* args) {
     /* Signal to the measurement task */
     if ( xSemaphoreGive(sem_cal_to_meas) != pdTRUE ) {
         
-        //ESP_LOGE(TAG, "Failed to give semaphore");
+        #if DEBUG
+        ESP_LOGE(TAG, "Failed to give semaphore");
+        #endif
     }
     
 
