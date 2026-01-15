@@ -13,7 +13,7 @@
 #include "../Middle_Ware/hardware.h"
 #include "../Middle_Ware/hardware-test.h"
 
-#define SIG_GEN_FREQ (43210.0f) 
+#define SIG_GEN_FREQ (47210.0f) 
 
 static const char *TAG = "MAIN";
 
@@ -73,19 +73,19 @@ void app_main(void)
     }
 
 
-    // if (init_inamp_pots() != ESP_OK) {
+    if (init_inamp_pots() != ESP_OK) {
     #if DEBUG
     ESP_LOGE(TAG, "Failed to init inamp pots");
     #endif
+         return;
+    }
+
+
+
+    // if (signal_gen_start(SIG_GEN_FREQ) != ESP_OK) {
+    //     ESP_LOGE(TAG, "Failed to initialize Signal Generator");
     //     return;
     // }
-
-
-
-    if (signal_gen_start(SIG_GEN_FREQ) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize Signal Generator");
-        return;
-    }
 
 
         

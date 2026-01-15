@@ -128,7 +128,7 @@ int test_dsp(bool clipped, float clip_percent) {
 void test_function(void) {
     // test_adc();
     test_signal_gen();
-    test_inamp_pots();
+    // test_inamp_pots();
     // test_mux();
       
 

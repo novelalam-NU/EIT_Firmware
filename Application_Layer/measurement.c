@@ -6,8 +6,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include <rom/ets_sys.h>
-#include "esp_timer.h"
+//#include <rom/ets_sys.h>
+//#include "esp_timer.h"
 
 #define TARGET_BUCKET 7
 
@@ -43,7 +43,7 @@ void measurement_task(void* args) {
         int idx = 0; //reset index
         
         //hardware timer
-        int64_t start_time = esp_timer_get_time();
+        //int64_t start_time = esp_timer_get_time();
 
 
         // Ensure gains are set
@@ -54,13 +54,11 @@ void measurement_task(void* args) {
             for (uint8_t sense_elec_pair = 0; sense_elec_pair < NUM_SENSE_PAIRS; sense_elec_pair++) {
                 Calibration_t* curr_config = &calibration_table[src_elec_pair][sense_elec_pair];
 
-                // if (set_mux(curr_config->src_pos, curr_config->src_neg, 
-                //             curr_config->sense_pos, curr_config->sense_neg) != ESP_OK) {
-                #if DEBUG
+                if (set_mux(curr_config->src_pos, curr_config->src_neg, 
+                            curr_config->sense_pos, curr_config->sense_neg) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to set mux");
-                #endif
-                //     continue;
-                // }
+                    continue;
+                }
 
                 // Small delay for settling
                 // ets_delay_us(100);
@@ -72,14 +70,21 @@ void measurement_task(void* args) {
                     continue;
                 }
 
-            //will run on core 1
+                // Debug: dump raw ADC readings for this configuration
+                printf("ADC src:%u sense:%u idx:%u ->", src_elec_pair, sense_elec_pair, idx);
+                for (int sample = 0; sample < ADC_READINGS_PER_PACKET; sample++) {
+                    printf(" %d", adc_packet_buffers[idx][sample]);
+                }
+                printf("\n");
+
+            //will run on core 2
                 uint16_t amplitude = (uint16_t)dsp_freq_amp(adc_packet_buffers[idx], ADC_READINGS_PER_PACKET, TARGET_BUCKET, TARGET_BUCKET);
                 //printf("Amplitude: %u\n", amplitude);
                 // Calculate difference: calibration_table->reference_amp - amplitude
                 if (idx < (NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS)) {
                     
                     amps[idx] = (int16_t)curr_config->reference_amp - (int16_t)amplitude;
-                    //printf("Idx:%u Ref:%d Amp:%d Diff:%d\n", idx, reference, amp_signed, amps[idx]);
+                    printf("Idx:%u Ref:%d Amp:%u Diff:%d\n", idx, (int)curr_config->reference_amp, (unsigned)amplitude, amps[idx]);
                     idx++;
                 } 
 
@@ -87,8 +92,8 @@ void measurement_task(void* args) {
         }
 
         // Print results
-        int64_t end_time = esp_timer_get_time();
-        ESP_LOGI(TAG, "Measurement cycle time: %lld us", (end_time - start_time));
+        //int64_t end_time = esp_timer_get_time();
+        //ESP_LOGI(TAG, "Measurement cycle time: %lld us", (end_time - start_time));
         
         // for (int i = 0; i < (NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS); i++) {
         //     int src_pair = i / NUM_SENSE_PAIRS;
