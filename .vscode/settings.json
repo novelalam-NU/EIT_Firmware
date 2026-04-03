@@ -16,7 +16,7 @@
   "clangd.arguments": [
     "--background-index",
     "--query-driver=**",
-    "--compile-commands-dir=/Users/novelalam/EIT_Firmware/build"
+    "--compile-commands-dir=${workspaceFolder}/build"
   ],
   "idf.flashType": "UART",
   "idf.currentSetup": "/Users/novelalam/esp/v5.2.1/esp-idf"

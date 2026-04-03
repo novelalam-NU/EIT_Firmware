@@ -1,4 +1,4 @@
-# EIT Firmware
+# EITWatch Firmware
 
 Firmware for an Electrical Impedance Tomography (EIT) system based on the ESP32-C3 microcontroller. This project controls signal generation, multiplexing, and data acquisition to perform impedance measurements.
 
@@ -16,7 +16,7 @@ The system is built around the **ESP32-C3** (RISC-V) and interfaces with the fol
 The codebase is organized into layers to separate hardware specifics from application logic:
 
 ```
-EIT_Firmware/
+EITWatch_Firmware/
 ├── Application_Layer/      # High-level logic
 │   ├── calibration.c       # System calibration routines
 │   └── measurement.c       # Impedance measurement sequences

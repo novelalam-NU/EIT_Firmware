@@ -7,4 +7,4 @@ cmake_minimum_required(VERSION 3.16)
 set(EXTRA_COMPONENT_DIRS Middle_Ware Device_Drivers)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(EIT_Firmware)
+project(EITWatch_Firmware)
