@@ -10,7 +10,17 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+# For highpass filtering
+from scipy.signal import butter, filtfilt
+
 NUM_CH = 40
+
+# Highpass filter helper
+def highpass_filter(data, cutoff=0.1, fs=1.0, order=3):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='high', analog=False)
+    return filtfilt(b, a, data, axis=0)
 
 def load_frames(path: str) -> np.ndarray:
     frames = []
@@ -43,6 +53,9 @@ def main():
     ref = frames[0]
     deltas = frames - ref  # (frames, channels)
 
+    # Highpass filter the data (per channel)
+    filtered = highpass_filter(frames, cutoff=0.1, fs=1.0, order=3)
+
     plt.figure(figsize=(10, 6))
     plt.imshow(deltas.T, aspect="auto", origin="lower",
                interpolation="nearest", cmap="coolwarm")
@@ -59,6 +72,14 @@ def main():
     plt.xlabel("Frame index")
     plt.ylabel("Value")
     plt.title("All channels over time")
+
+    # 2b) Overlay of all channels (highpass filtered)
+    plt.figure(figsize=(10, 5))
+    for ch in range(num_ch):
+        plt.plot(t, filtered[:, ch], alpha=0.6)
+    plt.xlabel("Frame index")
+    plt.ylabel("Filtered Value")
+    plt.title("All channels over time (Highpass filtered)")
 
     # 3) Max |drift| per channel bar plot
     abs_drift = np.max(np.abs(deltas), axis=0)
@@ -81,6 +102,17 @@ def main():
         ax.set_title(f"Channel {ch} over time")
         ax.grid(True, alpha=0.3)
         plt.show()   # blocks until this window is closed
+        plt.close(fig)
+
+    # 5) One window per channel (highpass filtered), shown sequentially.
+    for ch in range(num_ch):
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.plot(t, filtered[:, ch])
+        ax.set_xlabel("Frame index")
+        ax.set_ylabel("Filtered Value")
+        ax.set_title(f"Channel {ch} over time (Highpass filtered)")
+        ax.grid(True, alpha=0.3)
+        plt.show()
         plt.close(fig)
 
 if __name__ == "__main__":

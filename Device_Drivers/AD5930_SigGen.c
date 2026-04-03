@@ -31,9 +31,9 @@ static spi_device_handle_t ad5930_handle = NULL;
 
 /* Used for setting frequency*/
 static spi_transaction_t msg_set_freq = {
-    .flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA,
+    // AD5930 init packets are transmit-only for our use case.
+    .flags = SPI_TRANS_USE_TXDATA,
     .length = 16,
-    .rx_data = {0}
 };
 
 
@@ -46,17 +46,18 @@ int AD5930_init(float init_freq) {
     esp_err_t ret = ESP_OK;
 
     if (ad5930_handle == NULL) {
-        ret = spi_bus_add_device(SPI2_HOST, &ad5930_spi_config, &ad5930_handle);
-        if ( ret != ESP_OK ) {
-            #if DEBUG
-            ESP_LOGE(TAG, "Failed to add AD5930 to spi bus: %s", esp_err_to_name(ret));
-            #endif
-            return ret;
-        } else {
-            ESP_LOGI(TAG, "Added AD5930 to bus");
-        }
+        // Ensure CTRL pin is configured before SPI traffic starts.
         gpio_reset_pin(PIN_CTRL);
         gpio_set_direction(PIN_CTRL, GPIO_MODE_OUTPUT);
+        gpio_set_level(PIN_CTRL, 0);
+
+        ret = spi_bus_add_device(SPI2_HOST, &ad5930_spi_config, &ad5930_handle);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "spi_bus_add_device(AD5930) failed: %s", esp_err_to_name(ret));
+            return ret;
+        }
+
+        ESP_LOGI(TAG, "Added AD5930 to SPI bus");
     }
 
     gpio_set_level(PIN_CTRL, 0);
@@ -84,12 +85,10 @@ int AD5930_init(float init_freq) {
     msg_set_freq.tx_data[1] = (packet0) & 0xff;
     ESP_LOGI(TAG, "SPI Bytes: [0x%02X, 0x%02X]", msg_set_freq.tx_data[0], msg_set_freq.tx_data[1]);
 
-    ret = spi_device_transmit(ad5930_handle, &msg_set_freq);
+    ret = spi_device_polling_transmit(ad5930_handle, &msg_set_freq);
     
     if ( ret != ESP_OK ) {
-        #if DEBUG
         ESP_LOGE(TAG, "Failed to set config for ad5930: %s", esp_err_to_name(ret));
-        #endif
         return ret;
     } 
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -113,12 +112,10 @@ int AD5930_init(float init_freq) {
     ESP_LOGI(TAG, "SPI Bytes: [0x%02X, 0x%02X]", msg_set_freq.tx_data[0], msg_set_freq.tx_data[1]);
 
 
-    ret = spi_device_transmit(ad5930_handle, &msg_set_freq);
+    ret = spi_device_polling_transmit(ad5930_handle, &msg_set_freq);
     
     if ( ret != ESP_OK ) {
-        #if DEBUG
         ESP_LOGE(TAG, "Failed to set freq for ad5930: %s", esp_err_to_name(ret));
-        #endif
         return ret;
     } 
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -132,12 +129,10 @@ int AD5930_init(float init_freq) {
     msg_set_freq.tx_data[1] = (packet2) & 0xff;
     ESP_LOGI(TAG, "SPI Bytes: [0x%02X, 0x%02X]", msg_set_freq.tx_data[0], msg_set_freq.tx_data[1]);
 
-    ret = spi_device_transmit(ad5930_handle, &msg_set_freq);
+    ret = spi_device_polling_transmit(ad5930_handle, &msg_set_freq);
 
     if ( ret != ESP_OK ) {
-        #if DEBUG
         ESP_LOGE(TAG, "Failed to set freq for ad5930: %s", esp_err_to_name(ret));
-        #endif
         return ret;
     }
     vTaskDelay(pdMS_TO_TICKS(10));
@@ -145,7 +140,7 @@ int AD5930_init(float init_freq) {
     ESP_LOGI(TAG, "AD5930 Set to %f", init_freq);
     
 
-    return 0;
+    return ESP_OK;
 
 
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#define ADC_BUF_LEN   64
+
 // #define DEBUG 1
 
 #include <stdint.h>
@@ -10,7 +12,6 @@
 #define SENSE_INAMP_HANDLE 1
 
 #define ESP32C3
-// #define USE_ESP_ADC
 
 #ifdef ESP32C3
 // SPI bus pins (XIAO ESP32-C3)
@@ -23,16 +24,11 @@
 #define PIN_CS_DRIVE      GPIO_NUM_5    
 #define PIN_CS_MEAS       GPIO_NUM_6    
 #define PIN_CS_MUX        GPIO_NUM_7    
-#define PIN_CS_AD5930     GPIO_NUM_20   
+#define PIN_CS_AD5930     GPIO_NUM_44   
 
 #define PIN_CTRL          GPIO_NUM_4    
 #define PIN_MSB           GPIO_NUM_3  
 #endif
-
-#ifdef USE_ESP_ADC
-#define PIN_ESP_ADC_INPUT GPIO_NUM_4
-#endif
-
 
 /**
  * @brief Start the signal generator at a specific frequency.
@@ -105,6 +101,18 @@ int init_mux(void);
  * @return 0 on success, or an error code.
  */
 int adc_init(void);
+
+/**
+ * @brief Reads ADC samples and computes the peak-to-peak amplitude.
+ *
+ * This function reads a buffer of ADC samples of length ADC_BUF_LEN,
+ * checks for read errors, and computes the amplitude using the
+ * standard deviation magnitude function. Returns 0 on ADC read error.
+ *
+ * @return Peak-to-peak amplitude (uint16_t), or 0 on error.
+ */
+uint16_t calc_peak_to_peak(void);
+
 
 
 

@@ -7,9 +7,10 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_task_wdt.h"
-#include "wireless.h"
+#include "../Application_Layer/wireless.h"
 #include "../Application_Layer/calibration.h"
 #include "../Application_Layer/measurement.h"
+#include "../Application_Layer/tasks.h"
 #include "../Middle_Ware/hardware.h"
 
 #define SIG_GEN_FREQ (50000.0f)
@@ -18,12 +19,6 @@
 static bool eit_hardware_init(void);
 
 static const char *TAG = "MAIN";
-
-/* Task details for measurement task */
-TaskHandle_t meas_task;
-static const char *meas_task_name = "MeasurementTask";
-static const configSTACK_DEPTH_TYPE meas_task_stack_depth = 4000;
-static const UBaseType_t meas_task_priority = 5;
 
 void app_main(void)
 {
@@ -47,10 +42,13 @@ void app_main(void)
         ESP_LOGI(TAG, "Wi-Fi ready, starting measurement task");
     }
 
-    /* Create a task for measurement */
-    if (xTaskCreatePinnedToCore(&measurement_task, meas_task_name, meas_task_stack_depth, NULL, meas_task_priority, &meas_task, 0) != pdPASS) {
-        ESP_LOGE(TAG, "Failed to create measurement task");
+    if (create_udp_socket() < 0) {
+        ESP_LOGE(TAG, "Failed to create UDP socket");
+        return;
     }
+
+    start_measurement_task();
+    start_udp_task();
 }
 
 /* Initializes all EIT hardware components. Returns true on success, false on failure. */

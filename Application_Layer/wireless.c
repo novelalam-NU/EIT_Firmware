@@ -1,5 +1,8 @@
 #include "wireless.h"
 
+#include <errno.h>
+#include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_err.h"
@@ -8,6 +11,8 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
+#include "lwip/inet.h"
+#include "lwip/sockets.h"
 
 #define WIFI_CONNECTED_BIT BIT0
 
@@ -123,8 +128,8 @@ bool wireless_hardware_init(void)
 
     wifi_config_t wifi_config_details = {
         .sta = {
-            .ssid = "NA iPhone",
-            .password = "11111111",
+            .ssid = WIFI_SSID,
+            .password = WIFI_PASSWORD,
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
         },
     };
@@ -149,3 +154,78 @@ bool wireless_hardware_init(void)
 
     return true;
 }
+
+
+/* UDP broadcast destination (255.255.255.255); requires SO_BROADCAST on the socket. */
+static struct sockaddr_in target = {
+    .sin_family = AF_INET,
+    .sin_port = htons(PORT_NUM),
+    .sin_addr.s_addr = htonl(INADDR_BROADCAST),
+};
+
+/* Static fd to use */
+static int fd;
+
+
+int create_udp_socket(void)
+{
+    target.sin_addr.s_addr = htonl(INADDR_BROADCAST);
+
+    fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (fd < 0) {
+        ESP_LOGE(TAG, "socket() failed: errno=%d (%s)", errno, strerror(errno));
+        return -1;
+    }
+
+    int broadcast = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+        ESP_LOGE(TAG, "SO_BROADCAST failed: errno=%d (%s)", errno, strerror(errno));
+        close(fd);
+        fd = -1;
+        return -1;
+    }
+
+    return 0;
+}
+
+
+int send_udp_datagram(const uint8_t *buf, uint16_t buf_size)
+{
+    if (fd < 0) {
+        ESP_LOGE(TAG, "send_udp_datagram: socket not created");
+        return -1;
+    }
+    if (buf == NULL || buf_size == 0) {
+        return -1;
+    }
+
+    int sent = sendto(fd, buf, buf_size, 0, (const struct sockaddr *)&target, sizeof(target));
+    if (sent < 0) {
+        ESP_LOGE(TAG, "sendto failed: errno=%d (%s)", errno, strerror(errno));
+        return -1;
+    }
+    if ((unsigned)sent != (unsigned)buf_size) {
+        ESP_LOGW(TAG, "partial send: %d/%u bytes", sent, (unsigned)buf_size);
+        return -1;
+    }
+
+    return 0;
+}
+
+/* UDP task */
+void UDP_task(void* arg) {
+    for (;;) {
+
+        /* Wait for measurement task to be done with a frame*/
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+
+        /* send the ewma_amp buffer as a udp datagram */
+        if (send_udp_datagram((const uint8_t *)ewma_amp, sizeof(ewma_amp)) != 0) {
+            ESP_LOGE(TAG, "Failed to send UDP packet");
+        }
+
+    }
+}
+
+

@@ -5,7 +5,6 @@
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "driver/spi_master.h"
-#include "esp_adc/adc_oneshot.h"
 #include "../Device_Drivers/AD5270_DigiPot.h"
 #include "../Device_Drivers/AD5930_SigGen.h"
 #include "../Device_Drivers/ADG73_MUX.h"
@@ -17,38 +16,6 @@
 #define ESP_OK 0
 
 static const char *TAG = "HARDWARE";
-
-#ifdef USE_ESP_ADC
-static adc_oneshot_unit_handle_t s_adc1_handle = NULL;
-static bool s_adc1_initialized = false;
-
-static int init_esp_adc_oneshot(void) {
-    if (s_adc1_initialized) {
-        return ESP_OK;
-    }
-
-    adc_oneshot_unit_init_cfg_t init_config = {
-        .unit_id = ADC_UNIT_1,
-        .ulp_mode = ADC_ULP_MODE_DISABLE,
-    };
-    if (adc_oneshot_new_unit(&init_config, &s_adc1_handle) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init ADC oneshot unit");
-        return -1;
-    }
-
-    adc_oneshot_chan_cfg_t channel_config = {
-        .atten = ADC_ATTEN_DB_12,
-        .bitwidth = ADC_BITWIDTH_DEFAULT,
-    };
-    if (adc_oneshot_config_channel(s_adc1_handle, ADC_CHANNEL_4, &channel_config) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to config ADC channel for GPIO4");
-        return -1;
-    }
-
-    s_adc1_initialized = true;
-    return ESP_OK;
-}
-#endif
 
 
 
@@ -112,28 +79,10 @@ int adcRead(uint16_t *buf, size_t len) {
     ESP_LOGI(TAG, "adcRead called with buffer length=%zu", len);
     #endif
 
-    #ifdef USE_ESP_ADC
-        if (init_esp_adc_oneshot() != ESP_OK) {
-            return -1;
-        }
-
-        for (size_t i = 0; i < len; i++) {
-            int adc_raw = 0;
-            if (adc_oneshot_read(s_adc1_handle, ADC_CHANNEL_4, &adc_raw) != ESP_OK) {
-                ESP_LOGE(TAG, "ESP ADC read failed");
-                return -1;
-            }
-            buf[i] = (uint16_t)adc_raw;
-        }
-    #else
-        if (AD7450_Read(buf, len) != 0) {
-            ESP_LOGI(TAG, "AD7450 read failed");
-            return -1;
-        }
-
-
-        
-    #endif
+    if (AD7450_Read(buf, len) != 0) {
+        ESP_LOGI(TAG, "AD7450 read failed");
+        return -1;
+    }
 
     return ESP_OK;
 }
@@ -213,18 +162,17 @@ int init_mux(void) {
 }
 
 int adc_init(void) {
-    #ifdef USE_ESP_ADC
-    return init_esp_adc_oneshot();
-    #endif
     return AD7450_init();
 }
 
 
-bool detect_opamp_clipping(int16_t *buf, size_t len, uint32_t threshold, uint8_t begin, uint8_t end) {
-    (void)buf;
-    (void)len;
-    (void)threshold;
-    (void)begin;
-    (void)end;
-    return false;
+uint16_t calc_peak_to_peak(void) {
+    uint16_t raw[ADC_BUF_LEN];
+
+    if (adcRead(raw, ADC_BUF_LEN) != 0) {
+        ESP_LOGE(TAG, "Failed to read ADC samples");
+        return 0;
+    }
+
+    return calc_std_dev_mag((int16_t *)raw, ADC_BUF_LEN, 1);
 }

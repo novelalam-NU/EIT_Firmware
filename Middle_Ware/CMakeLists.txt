@@ -1,3 +1,3 @@
-idf_component_register(SRCS "hardware-test.c" "hardware.c" "test_data_gen.c"
+idf_component_register(SRCS "hardware.c"
                        INCLUDE_DIRS "."
-                       REQUIRES Device_Drivers driver esp-dsp esp_adc)
+                       REQUIRES Device_Drivers driver)
