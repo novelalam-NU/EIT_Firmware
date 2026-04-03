@@ -6,7 +6,7 @@
 #include "calibration.h"
 
 #define PORT_NUM (1423)
-#define IP_ADDR ("129.105.10.117")
+// #define IP_ADDR ("129.105.10.117")
 
 /* Wi-Fi station credentials used by wireless_hardware_init(). */
 #define WIFI_SSID ("NA iPhone")
