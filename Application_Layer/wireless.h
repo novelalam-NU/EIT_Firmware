@@ -6,11 +6,11 @@
 #include "calibration.h"
 
 #define PORT_NUM (1423)
-// #define IP_ADDR ("129.105.10.117")
+#define IP_ADDR ("192.0.0.2")
 
 /* Wi-Fi station credentials used by wireless_hardware_init(). */
-#define WIFI_SSID ("NA iPhone")
-#define WIFI_PASSWORD ("11111111")
+#define WIFI_SSID ("spicelab")
+#define WIFI_PASSWORD ("spice!2017!lab")
 
 /**
  * @brief Initialize the wireless subsystem in station mode.

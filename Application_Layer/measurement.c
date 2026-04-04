@@ -20,7 +20,7 @@ static const char *TAG = "MEASUREMENT";
 #define AMP_FILTER_ALPHA  0.8f
 
 // #define PROFILE_SAMPLE_RATE
-#define PRINT_MEASUREMENTS
+// #define PRINT_MEASUREMENTS
 
 uint16_t adc_packet_buffers[MAX_ADC_PACKETS][ADC_READINGS_PER_PACKET] = {0};
 
