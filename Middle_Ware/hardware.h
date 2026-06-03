@@ -11,9 +11,26 @@
 #define SRC_INAMP_HANDLE 0
 #define SENSE_INAMP_HANDLE 1
 
-#define ESP32C3
+#include "sdkconfig.h"
 
-#ifdef ESP32C3
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+// SPI bus pins (XIAO ESP32-S3)
+#define PIN_SPI_MOSI      GPIO_NUM_8    
+#define PIN_SPI_MISO      GPIO_NUM_9   
+#define PIN_SPI_SCLK      GPIO_NUM_7   
+
+// Chip Selects
+#define PIN_CS_ADC        GPIO_NUM_1    
+#define PIN_CS_DRIVE      GPIO_NUM_4    
+#define PIN_CS_MEAS       GPIO_NUM_5    
+#define PIN_CS_MUX        GPIO_NUM_6    
+#define PIN_CS_AD5930     GPIO_NUM_44   
+
+#define PIN_CTRL          GPIO_NUM_3    
+#define PIN_MSB           GPIO_NUM_2  
+#define PIN_MODE_SELECT   GPIO_NUM_2
+
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(ESP32C3)
 // SPI bus pins (XIAO ESP32-C3)
 #define PIN_SPI_MOSI      GPIO_NUM_9    
 #define PIN_SPI_MISO      GPIO_NUM_10   
@@ -28,6 +45,7 @@
 
 #define PIN_CTRL          GPIO_NUM_4    
 #define PIN_MSB           GPIO_NUM_3  
+#define PIN_MODE_SELECT   GPIO_NUM_3
 #endif
 
 /**

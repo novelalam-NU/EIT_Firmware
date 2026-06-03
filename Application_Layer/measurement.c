@@ -14,6 +14,8 @@
 
 static const char *TAG = "MEASUREMENT";
 
+extern TaskHandle_t inference_task_handle;
+
 #define TOTAL_MEASUREMENTS (NUM_ELECTRODE_PAIRS * NUM_SENSE_PAIRS)
 
 /** Alpha for per-channel EWMA smoothing (0..1). Smaller = smoother. */
@@ -64,8 +66,10 @@ void measurement_task(void* args) {
 
         }
 
-        /* Send task notification to UDP task */
-        xTaskNotifyGive( udp_task );
+        /* Send task notification to Inference task */
+        if (inference_task_handle != NULL) {
+            xTaskNotifyGive(inference_task_handle);
+        }
         
 
 #ifdef PRINT_MEASUREMENTS

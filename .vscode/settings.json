@@ -1,6 +1,6 @@
 {
   "C_Cpp.intelliSenseEngine": "default",
-  "idf.espIdfPath": "/Users/novelalam/esp/v5.2.1/esp-idf",
+  "idf.espIdfPath": "/Users/novelalam/esp-idf",
   "idf.pythonInstallPath": "/Users/novelalam/.pyenv/shims/python",
   "idf.openOcdConfigs": [
     "board/esp32s3-bridge.cfg"
@@ -19,5 +19,5 @@
     "--compile-commands-dir=${workspaceFolder}/build"
   ],
   "idf.flashType": "UART",
-  "idf.currentSetup": "/Users/novelalam/esp/v5.2.1/esp-idf"
+  "idf.currentSetup": "/Users/novelalam/esp-idf"
 }

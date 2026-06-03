@@ -56,6 +56,8 @@ int send_udp_datagram( const uint8_t* buf, uint16_t buf_size);
  *
  * @param arg Opaque user argument passed by xTaskCreate/xTaskCreatePinnedToCore.
  */
+#if 0
 void UDP_task(void* arg);
+#endif
 
 #endif

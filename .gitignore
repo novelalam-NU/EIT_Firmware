@@ -3,3 +3,7 @@ managed_components/
 .DS_Store
 __pycache__/
 *.pyc
+.cache/
+EITWatch (1).pdf
+image.png
+Middle_Ware/IMG_2301.HEIC

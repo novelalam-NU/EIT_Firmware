@@ -9,12 +9,13 @@ static const char *meas_task_name = "MeasurementTask";
 static const configSTACK_DEPTH_TYPE meas_task_stack_depth = 4000;
 static const UBaseType_t meas_task_priority = 0;
 
-static const char *udp_task_name = "UDPTask";
-static const configSTACK_DEPTH_TYPE udp_task_stack_depth = 4000;
-static const UBaseType_t udp_task_priority = 0;
+// static const char *udp_task_name = "UDPTask";
+// static const configSTACK_DEPTH_TYPE udp_task_stack_depth = 4000;
+// static const UBaseType_t udp_task_priority = 0;
 
 TaskHandle_t meas_task;
-TaskHandle_t udp_task;
+// TaskHandle_t udp_task;
+
 
 void start_measurement_task(void)
 {
@@ -24,6 +25,7 @@ void start_measurement_task(void)
     }
 }
 
+/*
 void start_udp_task(void)
 {
     if (xTaskCreatePinnedToCore(UDP_task, udp_task_name, udp_task_stack_depth, NULL,
@@ -31,3 +33,6 @@ void start_udp_task(void)
         ESP_LOGE(TAG, "Failed to create UDP task");
     }
 }
+*/
+
+

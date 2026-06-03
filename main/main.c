@@ -13,12 +13,17 @@
 #include "../Application_Layer/tasks.h"
 #include "../Middle_Ware/hardware.h"
 
+#include "../Application_Layer/inference.h"
+
 #define SIG_GEN_FREQ (50000.0f)
 #define WIFI_CONNECT_TIMEOUT_MS 15000
 
 static bool eit_hardware_init(void);
-
 static const char *TAG = "MAIN";
+
+// #define TEST
+
+extern void test_hardware(void);
 
 void app_main(void)
 {
@@ -31,24 +36,13 @@ void app_main(void)
         return;
     }
 
-    if (!wireless_hardware_init()) {
-        ESP_LOGE(TAG, "Wireless initialization failed");
-        return;
-    }
-
-    if (!wireless_wait_for_ip(WIFI_CONNECT_TIMEOUT_MS)) {
-        ESP_LOGW(TAG, "Wi-Fi did not get IP within %d ms", WIFI_CONNECT_TIMEOUT_MS);
-    } else {
-        ESP_LOGI(TAG, "Wi-Fi ready, starting measurement task");
-    }
-
-    if (create_udp_socket() < 0) {
-        ESP_LOGE(TAG, "Failed to create UDP socket");
-        return;
-    }
-
+#ifdef TEST
+    test_hardware();
+#else
     start_measurement_task();
-    start_udp_task();
+    // start_udp_task();
+    start_inference_task();
+#endif
 }
 
 /* Initializes all EIT hardware components. Returns true on success, false on failure. */
