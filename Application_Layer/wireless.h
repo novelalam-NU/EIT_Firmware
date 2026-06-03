@@ -8,9 +8,8 @@
 #define PORT_NUM (1423)
 #define IP_ADDR ("192.0.0.2")
 
-/* Wi-Fi station credentials used by wireless_hardware_init(). */
-#define WIFI_SSID ("spicelab")
-#define WIFI_PASSWORD ("spice!2017!lab")
+#define WIFI_SSID ("YOUR_WIFI_SSID")
+#define WIFI_PASSWORD ("YOUR_WIFI_PASSWORD")
 
 /**
  * @brief Initialize the wireless subsystem in station mode.
