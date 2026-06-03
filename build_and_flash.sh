@@ -14,8 +14,17 @@ else
     exit 1
 fi
 
-# Determine serial port (defaulting to /dev/cu.usbmodem101 if not specified)
-PORT="${1:-/dev/cu.usbmodem101}"
+# Auto-detect macOS USB serial port (e.g. cu.usbmodem* or cu.usbserial*)
+DETECTED_PORT=$(ls -1 /dev/cu.usbmodem* /dev/cu.usbserial* 2>/dev/null | head -n 1)
+
+if [ -n "$DETECTED_PORT" ]; then
+    echo "Auto-detected USB port: $DETECTED_PORT"
+    PORT="${1:-$DETECTED_PORT}"
+else
+    echo "Warning: No USB serial port automatically detected."
+    PORT="${1:-/dev/cu.usbmodem101}"
+    echo "Defaulting to: $PORT"
+fi
 
 echo "Building EIT Firmware..."
 # Temporarily disable exit-on-error to check build status and auto-clean if needed
