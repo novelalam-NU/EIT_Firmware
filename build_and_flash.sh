@@ -14,6 +14,13 @@ else
     exit 1
 fi
 
+# Check for --clean flag
+CLEAN=false
+if [ "$1" = "--clean" ]; then
+    CLEAN=true
+    shift
+fi
+
 # Auto-detect macOS USB serial port (e.g. cu.usbmodem* or cu.usbserial*)
 DETECTED_PORT=$(ls -1 /dev/cu.usbmodem* /dev/cu.usbserial* 2>/dev/null | head -n 1)
 
@@ -26,21 +33,13 @@ else
     echo "Defaulting to: $PORT"
 fi
 
-echo "Building EIT Firmware..."
-# Temporarily disable exit-on-error to check build status and auto-clean if needed
-set +e
-idf.py build
-BUILD_STATUS=$?
-set -e
-
-if [ $BUILD_STATUS -ne 0 ]; then
-    echo "----------------------------------------------------------------------"
-    echo "Build failed. Trying 'idf.py fullclean' to resolve environment/Python version conflicts..."
-    echo "----------------------------------------------------------------------"
+if [ "$CLEAN" = true ]; then
+    echo "Cleaning build directory..."
     idf.py fullclean
-    echo "Retrying build..."
-    idf.py build
 fi
+
+echo "Building EIT Firmware..."
+idf.py build
 
 echo "Flashing EIT Firmware to port: $PORT..."
 idf.py -p "$PORT" flash
