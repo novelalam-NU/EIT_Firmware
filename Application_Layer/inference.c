@@ -8,7 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "gesture_model.h"
+#ifndef WINDOW_SIZE
 #define WINDOW_SIZE 40
+#endif
 #define NUM_FEATURES 5
 #define NUM_CHANNELS EWMA_AMP_COUNT // 35 channels
 
@@ -26,13 +28,11 @@
 #ifdef OPTIMIZATIONS_ENABLED
 #include "esp_dsp.h"
 
-// Precomputed values for Linear Regression Slope:
-// Mean of time indices 0..39 = 19.5
-static const float TIME_MEAN = 19.5f;
-// Sum of (t - 19.5)^2 for t in 0..39 = 5330
-static const float SLOPE_DENOMINATOR = 5330.0f;
+// Precomputed values for Linear Regression Slope derived from WINDOW_SIZE:
+#define TIME_MEAN (((float)WINDOW_SIZE - 1.0f) / 2.0f)
+#define SLOPE_DENOMINATOR (((float)WINDOW_SIZE * ((float)WINDOW_SIZE * (float)WINDOW_SIZE - 1.0f)) / 12.0f)
 
-// Array holding [t - 19.5] for t in 0..39. Used for dsps_dotprod_f32.
+// Array holding [t - TIME_MEAN] for t in 0..(WINDOW_SIZE - 1). Used for dsps_dotprod_f32.
 // Aligned to 16-byte boundary for vector instructions.
 __attribute__((aligned(16))) static float time_offsets[WINDOW_SIZE];
 
@@ -97,7 +97,7 @@ static void extract_features(void) {
     for (int w = 0; w < WINDOW_SIZE; w++) {
       float val = window_buffer[circular_idx][ch];
       temp_array[w] =
-          val; // Store chronologically (oldest at index 0, newest at 39)
+          val; // Store chronologically (oldest at index 0, newest at WINDOW_SIZE - 1)
 
       if (val < min_val)
         min_val = val;
@@ -169,7 +169,7 @@ static void extract_features(void) {
     float variance_sum = 0.0f;
     float num_sum = 0.0f;
     float den_sum = 0.0f;
-    float mean_t = (float)(WINDOW_SIZE - 1) / 2.0f; // Mean of indices 0..39
+    float mean_t = (float)(WINDOW_SIZE - 1) / 2.0f; // Mean of indices 0..WINDOW_SIZE-1
 
     for (int w = 0; w < WINDOW_SIZE; w++) {
       // Reconstruct chronological sequence from the circular buffer
@@ -244,8 +244,8 @@ void inference_task(void *arg) {
     window_head = (window_head + 1) % WINDOW_SIZE;
     if (window_head == 0) {
       if (!buffer_full) {
-        ESP_LOGI(TAG, "Sliding window buffer is now FULL (40 frames). Starting "
-                      "inference!");
+        ESP_LOGI(TAG, "Sliding window buffer is now FULL (%d frames). Starting "
+                      "inference!", WINDOW_SIZE);
       }
       buffer_full = true;
     }
