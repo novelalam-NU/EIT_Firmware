@@ -4,7 +4,7 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.16)
 
-set(EXTRA_COMPONENT_DIRS Middle_Ware Device_Drivers)
+set(EXTRA_COMPONENT_DIRS Middle_Ware Device_Drivers Application_Layer)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(EITWatch_Firmware)
